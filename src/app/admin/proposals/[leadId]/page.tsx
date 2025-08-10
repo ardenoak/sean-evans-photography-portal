@@ -146,23 +146,48 @@ export default function ProposalPage() {
 
   useEffect(() => {
     const fetchLead = async () => {
-      if (!leadId) return;
+      if (!leadId) {
+        console.log('No leadId provided');
+        setLoading(false);
+        return;
+      }
+
+      console.log('Fetching lead with ID:', leadId);
 
       try {
+        // First check if we can connect to the leads table
+        const { data: allLeads, error: allLeadsError } = await supabase
+          .from('leads')
+          .select('id, first_name, last_name')
+          .limit(5);
+
+        console.log('All leads sample:', allLeads, 'Error:', allLeadsError);
+
+        // Now fetch the specific lead
         const { data, error } = await supabase
           .from('leads')
           .select('*')
           .eq('id', leadId)
           .single();
 
+        console.log('Lead query result:', { data, error, leadId });
+
         if (error) {
           console.error('Error fetching lead:', error);
+          if (error.code === 'PGRST116') {
+            console.log('Lead not found in database');
+          }
           return;
         }
 
-        setLead(data);
+        if (data) {
+          console.log('Lead found:', data);
+          setLead(data);
+        } else {
+          console.log('No data returned for lead');
+        }
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Fetch error:', error);
       } finally {
         setLoading(false);
       }
@@ -199,7 +224,10 @@ export default function ProposalPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-ivory flex items-center justify-center">
-        <div className="text-warm-brown text-xl">Loading proposal...</div>
+        <div className="text-center">
+          <div className="text-warm-brown text-xl mb-4">Loading proposal...</div>
+          <div className="text-warm-brown/60 text-sm">Lead ID: {leadId}</div>
+        </div>
       </div>
     );
   }
@@ -207,7 +235,21 @@ export default function ProposalPage() {
   if (!lead) {
     return (
       <div className="min-h-screen bg-ivory flex items-center justify-center">
-        <div className="text-red-600 text-xl">Lead not found</div>
+        <div className="text-center max-w-md">
+          <div className="text-red-600 text-xl mb-4">Lead not found</div>
+          <div className="text-warm-brown/60 text-sm mb-4">
+            Looking for lead ID: <code className="bg-white px-2 py-1 rounded">{leadId}</code>
+          </div>
+          <div className="text-warm-brown/60 text-sm">
+            Please check the browser console for debugging information, or verify this lead exists in the admin panel.
+          </div>
+          <button
+            onClick={() => router.push('/admin/leads')}
+            className="mt-4 px-4 py-2 bg-gold text-white rounded hover:bg-gold/90 transition-colors"
+          >
+            Back to Leads
+          </button>
+        </div>
       </div>
     );
   }
