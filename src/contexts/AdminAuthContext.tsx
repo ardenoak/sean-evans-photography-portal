@@ -24,7 +24,7 @@ interface AdminAuthContextType {
   loading: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
-  signIn: (email: string, password: string) => Promise<{ error?: any }>;
+  signIn: (email: string, password: string) => Promise<{ error?: any; data?: any }>;
   signInWithGoogle: () => Promise<{ error?: any }>;
   signOut: () => Promise<void>;
   hasPermission: (permission: 'leads' | 'clients' | 'sessions' | 'admins' | 'analytics') => boolean;
@@ -147,7 +147,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signIn = async (email: string, password: string): Promise<{ error?: any }> => {
+  const signIn = async (email: string, password: string): Promise<{ error?: any; data?: any }> => {
     try {
       console.log('AdminAuth: Starting sign in process for:', email);
       
@@ -156,7 +156,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         setTimeout(() => reject(new Error('Sign in timeout after 15 seconds')), 15000);
       });
       
-      const signInPromise = (async (): Promise<{ error?: any }> => {
+      const signInPromise = (async (): Promise<{ error?: any; data?: any }> => {
         // Try to sign in first with shorter timeout
         console.log('AdminAuth: Attempting auth.signInWithPassword...');
         const { data, error } = await supabase.auth.signInWithPassword({
