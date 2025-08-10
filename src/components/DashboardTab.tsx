@@ -66,7 +66,7 @@ export default function DashboardTab({ sessionData, timeline, quickActions, onCh
                     className="flex items-start space-x-3 sm:space-x-4 group hover:bg-ivory/50 p-3 rounded-lg transition-colors duration-200"
                     style={{ animationDelay: `${index * 150}ms` }}
                   >
-                    <div className={`flex-shrink-0 w-4 h-4 sm:w-5 sm:h-5 rounded-full mt-1 transition-colors duration-300 flex items-center justify-center ${
+                    <div className={`flex-shrink-0 w-6 h-6 sm:w-5 sm:h-5 rounded-full mt-0.5 transition-colors duration-300 flex items-center justify-center ${
                       item.completed
                         ? 'bg-green-500 shadow-lg shadow-green-500/30'
                         : item.highlight 
@@ -103,8 +103,8 @@ export default function DashboardTab({ sessionData, timeline, quickActions, onCh
       </div>
 
       {/* Quick Actions Sidebar */}
-      <div className="space-y-6">
-        <div className="bg-white rounded-xl shadow-lg p-6 transform hover:scale-105 transition-transform duration-300">
+      <div className="space-y-4 lg:space-y-6">
+        <div className="bg-white rounded-xl shadow-lg p-4 lg:p-6 transform hover:scale-105 transition-transform duration-300">
           <h3 className="text-lg font-didot mb-4 text-charcoal">Quick Actions</h3>
           <div className="space-y-3">
             {quickActions.map((action, index) => (
@@ -121,7 +121,7 @@ export default function DashboardTab({ sessionData, timeline, quickActions, onCh
         </div>
 
         {/* Session Concierge */}
-        <div className="bg-white rounded-xl shadow-lg p-6 transform hover:scale-105 transition-transform duration-300">
+        <div className="bg-white rounded-xl shadow-lg p-4 lg:p-6 transform hover:scale-105 transition-transform duration-300">
           <div className="flex items-center space-x-3 mb-4">
             <div className="w-10 h-10 bg-gold rounded-full flex items-center justify-center text-white font-semibold shadow-lg">
               A

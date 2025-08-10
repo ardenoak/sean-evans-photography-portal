@@ -217,76 +217,80 @@ export default function PortalClient({ sessionId }: PortalClientProps) {
       {/* Header */}
       <header className="bg-white shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-4 sm:py-6">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-4">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <button
                 onClick={() => router.push('/dashboard')}
-                className="text-warm-gray hover:text-charcoal transition-colors flex items-center space-x-2 group"
+                className="text-warm-gray hover:text-charcoal transition-colors flex items-center space-x-2 group flex-shrink-0"
                 title="Back to Dashboard"
               >
                 <span className="text-lg group-hover:scale-110 transition-transform">←</span>
-                <span className="hidden sm:inline text-sm">Dashboard</span>
+                <span className="text-xs sm:text-sm">Dashboard</span>
               </button>
-              <div className="h-8 w-px bg-warm-gray/30"></div>
+              <div className="h-6 sm:h-8 w-px bg-warm-gray/30 hidden sm:block"></div>
               <Image
                 src="/sean-evans-logo.png"
                 alt="Sean Evans Photography"
                 width={300}
                 height={120}
-                className="h-10 sm:h-14 w-auto cursor-pointer"
+                className="h-8 sm:h-10 md:h-14 w-auto cursor-pointer"
                 onClick={() => router.push('/dashboard')}
                 priority
               />
             </div>
-            <nav className="flex items-center space-x-4 sm:space-x-8">
-              <button 
-                onClick={() => setActiveTab('dashboard')}
-                className={`text-sm tracking-wide transition-colors relative ${
-                  activeTab === 'dashboard' 
-                    ? 'text-charcoal' 
-                    : 'text-warm-gray hover:text-charcoal'
-                }`}
-              >
-                Overview
-                {activeTab === 'dashboard' && (
-                  <div className="absolute -bottom-2 left-0 right-0 h-0.5 bg-gold animate-pulse"></div>
-                )}
-              </button>
-              <button 
-                onClick={() => setActiveTab('resources')}
-                className={`text-sm tracking-wide transition-colors relative flex items-center ${
-                  activeTab === 'resources' 
-                    ? 'text-charcoal' 
-                    : 'text-warm-gray hover:text-charcoal'
-                }`}
-              >
-                Resources
-                <span className="ml-2 bg-verde text-white text-xs px-2 py-1 rounded-full animate-bounce">3</span>
-                {activeTab === 'resources' && (
-                  <div className="absolute -bottom-2 left-0 right-0 h-0.5 bg-gold animate-pulse"></div>
-                )}
-              </button>
-              <button 
-                onClick={() => setActiveTab('gallery')}
-                className={`text-sm tracking-wide transition-colors relative ${
-                  activeTab === 'gallery' 
-                    ? 'text-charcoal' 
-                    : 'text-warm-gray hover:text-charcoal'
-                }`}
-              >
-                Gallery
-                {activeTab === 'gallery' && (
-                  <div className="absolute -bottom-2 left-0 right-0 h-0.5 bg-gold animate-pulse"></div>
-                )}
-              </button>
-              <span className="text-warm-gray text-sm hidden sm:inline">Welcome back, {sessionData!.clientName.split(' ')[0]}</span>
-            </nav>
+            <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-8">
+              <nav className="flex items-center space-x-2 sm:space-x-6">
+                <button 
+                  onClick={() => setActiveTab('dashboard')}
+                  className={`text-xs sm:text-sm tracking-wide transition-colors relative px-2 py-1 rounded-md ${
+                    activeTab === 'dashboard' 
+                      ? 'text-charcoal bg-gold/10' 
+                      : 'text-warm-gray hover:text-charcoal hover:bg-ivory'
+                  }`}
+                >
+                  Overview
+                  {activeTab === 'dashboard' && (
+                    <div className="absolute -bottom-2 left-0 right-0 h-0.5 bg-gold animate-pulse"></div>
+                  )}
+                </button>
+                <button 
+                  onClick={() => setActiveTab('resources')}
+                  className={`text-xs sm:text-sm tracking-wide transition-colors relative flex items-center px-2 py-1 rounded-md ${
+                    activeTab === 'resources' 
+                      ? 'text-charcoal bg-gold/10' 
+                      : 'text-warm-gray hover:text-charcoal hover:bg-ivory'
+                  }`}
+                >
+                  Resources
+                  <span className="ml-1 sm:ml-2 bg-verde text-white text-xs px-1.5 py-0.5 rounded-full">3</span>
+                  {activeTab === 'resources' && (
+                    <div className="absolute -bottom-2 left-0 right-0 h-0.5 bg-gold animate-pulse"></div>
+                  )}
+                </button>
+                <button 
+                  onClick={() => setActiveTab('gallery')}
+                  className={`text-xs sm:text-sm tracking-wide transition-colors relative px-2 py-1 rounded-md ${
+                    activeTab === 'gallery' 
+                      ? 'text-charcoal bg-gold/10' 
+                      : 'text-warm-gray hover:text-charcoal hover:bg-ivory'
+                  }`}
+                >
+                  Gallery
+                  {activeTab === 'gallery' && (
+                    <div className="absolute -bottom-2 left-0 right-0 h-0.5 bg-gold animate-pulse"></div>
+                  )}
+                </button>
+              </nav>
+              <span className="text-warm-gray text-xs sm:text-sm hidden sm:inline">
+                Welcome back, {sessionData!.clientName.split(' ')[0]}
+              </span>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Breadcrumb */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-6 pb-2">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-4 pb-2">
         <div className="flex items-center text-sm text-warm-gray space-x-2">
           <button 
             onClick={() => router.push('/dashboard')}
@@ -302,7 +306,7 @@ export default function PortalClient({ sessionId }: PortalClientProps) {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 transition-all duration-500 ease-in-out">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-4 sm:py-6 transition-all duration-500 ease-in-out">
         {renderTabContent()}
       </div>
 
