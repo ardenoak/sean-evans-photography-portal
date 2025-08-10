@@ -18,20 +18,32 @@ export default function AdminLoginPage() {
     setLoading(true);
     setError('');
 
-    console.log('Attempting to sign in with:', email);
-    const { error } = await signIn(email, password);
+    try {
+      console.log('Attempting to sign in with:', email);
+      
+      // Add a client-side timeout as backup
+      const signInTimeout = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Login timeout - please try again')), 20000);
+      });
+      
+      const signInPromise = signIn(email, password);
+      const result = await Promise.race([signInPromise, signInTimeout]);
 
-    console.log('Sign in result:', { error });
+      console.log('Sign in result:', { error: result.error });
 
-    if (error) {
-      console.error('Sign in error:', error);
-      setError(error.message || 'An error occurred during sign in');
-    } else {
-      console.log('Sign in successful, redirecting to dashboard');
-      router.push('/admin/dashboard');
+      if (result.error) {
+        console.error('Sign in error:', result.error);
+        setError(result.error.message || 'An error occurred during sign in');
+      } else {
+        console.log('Sign in successful, redirecting to dashboard');
+        router.push('/admin/dashboard');
+      }
+    } catch (error) {
+      console.error('Login timeout or error:', error);
+      setError(error instanceof Error ? error.message : 'Login failed - please try again');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (

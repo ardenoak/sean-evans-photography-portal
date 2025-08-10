@@ -150,52 +150,50 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     try {
       console.log('AdminAuth: Starting sign in process for:', email);
-      console.log('AdminAuth: Supabase client configured:', !!supabase, 'Auth available:', !!supabase.auth);
       
-      // Test basic Supabase connection first
-      console.log('AdminAuth: Testing basic Supabase connection...');
-      try {
-        const { data: testData, error: testError } = await supabase
-          .from('admin_users')
-          .select('count')
-          .limit(1);
-        console.log('AdminAuth: Basic connection test:', { testData, testError });
-      } catch (testErr) {
-        console.log('AdminAuth: Connection test failed:', testErr);
-      }
-      
-      // Try to sign in first
-      console.log('AdminAuth: Attempting auth.signInWithPassword...');
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
+      // Add timeout wrapper to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Sign in timeout after 15 seconds')), 15000);
       });
-
-      console.log('AdminAuth: signInWithPassword result:', { data: !!data, error });
-      if (error) return { error };
-
-      // Then check if this email is an admin in the database
-      console.log('AdminAuth: Checking admin privileges...');
-      const { data: adminCheck, error: adminError } = await supabase
-        .from('admin_users')
-        .select('is_active')
-        .eq('email', email)
-        .eq('is_active', true)
-        .single();
-
-      console.log('AdminAuth: Admin check result:', { adminCheck, adminError });
-      if (adminError || !adminCheck) {
-        // Sign out the user if they're not an admin
-        console.log('AdminAuth: Access denied, signing out user');
-        await supabase.auth.signOut();
-        return { error: { message: 'Access denied. Admin credentials required.' } };
-      }
       
-      console.log('AdminAuth: Sign in successful');
-      return { data };
+      const signInPromise = (async () => {
+        // Try to sign in first with shorter timeout
+        console.log('AdminAuth: Attempting auth.signInWithPassword...');
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        console.log('AdminAuth: signInWithPassword result:', { data: !!data, error });
+        if (error) return { error };
+
+        // Then check if this email is an admin in the database
+        console.log('AdminAuth: Checking admin privileges...');
+        const { data: adminCheck, error: adminError } = await supabase
+          .from('admin_users')
+          .select('is_active')
+          .eq('email', email)
+          .eq('is_active', true)
+          .single();
+
+        console.log('AdminAuth: Admin check result:', { adminCheck, adminError });
+        if (adminError || !adminCheck) {
+          // Sign out the user if they're not an admin
+          console.log('AdminAuth: Access denied, signing out user');
+          await supabase.auth.signOut();
+          return { error: { message: 'Access denied. Admin credentials required.' } };
+        }
+        
+        console.log('AdminAuth: Sign in successful');
+        return { data };
+      })();
+
+      // Race between sign in and timeout
+      return await Promise.race([signInPromise, timeoutPromise]);
+      
     } catch (error) {
       console.error('Admin sign in error:', error);
-      return { error };
+      return { error: error instanceof Error ? error : { message: 'Unknown sign in error' } };
     }
   };
 
