@@ -1,0 +1,81 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Didot:wght@400;700&display=swap');
+
+:root {
+  --charcoal: #2c2c2c;
+  --verde: #4a5d23;
+  --gold: #d4af37;
+  --ivory: #f8f6f0;
+  --warm-gray: #6b7280;
+}
+
+@theme inline {
+  --color-charcoal: var(--charcoal);
+  --color-verde: var(--verde);
+  --color-gold: var(--gold);
+  --color-ivory: var(--ivory);
+  --color-warm-gray: var(--warm-gray);
+  --font-didot: "Didot", serif;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Custom animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out forwards;
+}
+
+.animate-slide-in {
+  animation: slide-in 0.6s ease-out forwards;
+}
+
+.animate-slide-in-delay-1 {
+  animation: slide-in 0.6s ease-out 0.2s forwards;
+  opacity: 0;
+}
+
+.animate-slide-in-delay-2 {
+  animation: slide-in 0.6s ease-out 0.4s forwards;
+  opacity: 0;
+}
+
+/* Gallery background image responsive styles */
+.gallery-background {
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+/* Mobile optimization for background images */
+@media (max-width: 768px) {
+  .gallery-background {
+    background-attachment: scroll;
+    background-size: cover;
+    background-position: center;
+  }
+}
