@@ -85,20 +85,30 @@ export function SimpleAdminAuthProvider({ children }: { children: React.ReactNod
       try {
         console.log('Initializing auth...');
         
-        // Check if session expired
+        // Check if session expired (but don't block initialization)
         if (isSessionExpired()) {
-          console.log('Session expired, logging out');
-          await logout();
+          console.log('Session expired, clearing local state');
+          setUser(null);
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem(SESSION_KEY);
+            localStorage.removeItem(STAY_LOGGED_IN_KEY);
+          }
           return;
         }
 
         // Check current Supabase session with timeout
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Auth initialization timeout')), 10000);
+          setTimeout(() => reject(new Error('Auth initialization timeout')), 5000);
         });
 
-        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
+        let session = null;
+        try {
+          const result = await Promise.race([sessionPromise, timeoutPromise]) as any;
+          session = result.data?.session;
+        } catch (timeoutError) {
+          console.warn('Auth session check timed out, continuing without session');
+        }
         
         if (session?.user?.email) {
           console.log('Found session, loading admin user...');
@@ -108,7 +118,11 @@ export function SimpleAdminAuthProvider({ children }: { children: React.ReactNod
             setUser(adminUser);
           } else {
             console.log('Admin user not found, signing out');
-            await supabase.auth.signOut();
+            try {
+              await supabase.auth.signOut();
+            } catch (signOutError) {
+              console.warn('Sign out error (non-critical):', signOutError);
+            }
           }
         } else {
           console.log('No session found');
@@ -176,12 +190,19 @@ export function SimpleAdminAuthProvider({ children }: { children: React.ReactNod
 
   const logout = async () => {
     try {
-      await supabase.auth.signOut();
+      // Clear local state first
       setUser(null);
       
       if (typeof window !== 'undefined') {
         localStorage.removeItem(SESSION_KEY);
         localStorage.removeItem(STAY_LOGGED_IN_KEY);
+      }
+      
+      // Try to sign out from Supabase, but don't fail if it errors
+      try {
+        await supabase.auth.signOut();
+      } catch (signOutError) {
+        console.warn('Supabase sign out error (non-critical):', signOutError);
       }
       
       console.log('Logged out successfully');
