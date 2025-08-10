@@ -14,15 +14,17 @@ interface Lead {
   session_type_interest?: string;
   budget_range?: string;
   preferred_timeline?: string;
+  preferred_time?: string;
+  preferred_session_date?: string;
   lead_source?: string;
   status: string;
-  priority: string;
   message?: string;
   notes?: string;
   created_at: string;
   updated_at: string;
   last_contacted?: string;
   next_follow_up?: string;
+  last_viewed_at?: string;
 }
 
 export default function AdminLeadsPage() {
@@ -32,6 +34,9 @@ export default function AdminLeadsPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [editedLead, setEditedLead] = useState<Lead | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
   const [newLead, setNewLead] = useState({
@@ -42,12 +47,16 @@ export default function AdminLeadsPage() {
     session_type_interest: '',
     budget_range: '',
     preferred_timeline: '',
+    preferred_time: '',
+    preferred_session_date: '',
     lead_source: 'Manual Entry',
     message: '',
     client_id: null as string | null
   });
   const [clients, setClients] = useState<any[]>([]);
   const [isExistingClient, setIsExistingClient] = useState(false);
+  const [clientSearchQuery, setClientSearchQuery] = useState('');
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -72,6 +81,18 @@ export default function AdminLeadsPage() {
       };
     }
   }, [user, isAdmin, authLoading, router]);
+
+  // Close client dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showClientDropdown && !(event.target as Element).closest('.client-search-container')) {
+        setShowClientDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showClientDropdown]);
 
   const loadLeads = async () => {
     try {
@@ -109,6 +130,26 @@ export default function AdminLeadsPage() {
     }
   };
 
+  const markLeadAsViewed = async (leadId: string) => {
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .update({ 
+          last_viewed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', leadId);
+
+      if (error) {
+        console.error('Error marking lead as viewed:', error);
+      } else {
+        loadLeads();
+      }
+    } catch (error) {
+      console.error('Error marking lead as viewed:', error);
+    }
+  };
+
   const updateLeadStatus = async (leadId: string, newStatus: string) => {
     try {
       const { error } = await supabase
@@ -127,6 +168,63 @@ export default function AdminLeadsPage() {
     }
   };
 
+  const saveLeadChanges = async () => {
+    if (!editedLead || !selectedLead) return;
+
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .update({
+          status: editedLead.status,
+          notes: editedLead.notes,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editedLead.id);
+
+      if (error) {
+        console.error('Error saving lead:', error);
+        alert('Error saving lead changes');
+      } else {
+        setHasUnsavedChanges(false);
+        setSelectedLead(editedLead);
+        loadLeads();
+      }
+    } catch (error) {
+      console.error('Error saving lead:', error);
+    }
+  };
+
+  const handleLeadChange = (field: keyof Lead, value: any) => {
+    if (!selectedLead) return;
+    
+    const updated = { ...selectedLead, [field]: value };
+    setEditedLead(updated);
+    setHasUnsavedChanges(true);
+  };
+
+  const deleteLead = async (leadId: string) => {
+    if (!confirm('Are you sure you want to delete this lead? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .delete()
+        .eq('id', leadId);
+
+      if (error) {
+        console.error('Error deleting lead:', error);
+        alert('Error deleting lead');
+      } else {
+        setSelectedLead(null);
+        loadLeads();
+      }
+    } catch (error) {
+      console.error('Error deleting lead:', error);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     const colors = {
       'new': 'bg-verde text-white',
@@ -139,14 +237,6 @@ export default function AdminLeadsPage() {
     return colors[status as keyof typeof colors] || 'bg-warm-gray text-white';
   };
 
-  const getPriorityIcon = (priority: string) => {
-    const icons = {
-      'low': '🔵',
-      'medium': '🟡', 
-      'high': '🔴'
-    };
-    return icons[priority as keyof typeof icons] || '🔵';
-  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -163,12 +253,15 @@ export default function AdminLeadsPage() {
     }
   };
 
-  const isNewLead = (dateString: string) => {
-    const leadDate = new Date(dateString);
+  const isNewLead = (lead: Lead) => {
+    // Lead is "new" if it hasn't been viewed yet and was created recently
+    if (lead.last_viewed_at) return false; // Already viewed
+    
+    const leadDate = new Date(lead.created_at);
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - leadDate.getTime());
     const diffHours = Math.ceil(diffTime / (1000 * 60 * 60));
-    return diffHours <= 24; // New if within 24 hours
+    return diffHours <= 24; // New if within 24 hours and not viewed
   };
 
   const filteredLeads = leads.filter(lead => {
@@ -186,28 +279,34 @@ export default function AdminLeadsPage() {
     return acc;
   }, {} as Record<string, number>);
 
-  const newLeadsCount = leads.filter(lead => isNewLead(lead.created_at)).length;
+  const newLeadsCount = leads.filter(lead => isNewLead(lead)).length;
 
   const handleCreateLead = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreateLoading(true);
 
     try {
+      console.log('Creating lead with data:', newLead);
+      
       const leadData = {
         ...newLead,
         status: 'new',
-        priority: 'medium', // Default priority
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
+      
+      console.log('Final lead data being inserted:', leadData);
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('leads')
-        .insert([leadData]);
+        .insert([leadData])
+        .select();
+
+      console.log('Insert result:', { data, error });
 
       if (error) {
         console.error('Error creating lead:', error);
-        alert('Error creating lead');
+        alert(`Error creating lead: ${error.message}`);
       } else {
         setShowCreateModal(false);
         setNewLead({
@@ -218,10 +317,14 @@ export default function AdminLeadsPage() {
           session_type_interest: '',
           budget_range: '',
           preferred_timeline: '',
+          preferred_time: '',
+          preferred_session_date: '',
           lead_source: 'Manual Entry',
           message: '',
           client_id: null
         });
+        setClientSearchQuery('');
+        setShowClientDropdown(false);
         setIsExistingClient(false);
         loadLeads();
       }
@@ -263,8 +366,12 @@ export default function AdminLeadsPage() {
         first_name: '',
         last_name: '',
         email: '',
-        phone: ''
+        phone: '',
+        preferred_time: '',
+        preferred_session_date: ''
       }));
+      setClientSearchQuery('');
+      setShowClientDropdown(false);
     }
   };
 
@@ -292,7 +399,7 @@ export default function AdminLeadsPage() {
     <div className="min-h-screen bg-gradient-to-br from-ivory to-white">
       {/* Compact Header */}
       <header className="bg-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 py-3">
+        <div className="max-w-none mx-auto px-6 py-3">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-3">
               <button
@@ -330,7 +437,7 @@ export default function AdminLeadsPage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-4">
+      <div className="max-w-none mx-auto px-6 py-4">
         {/* Compact Stats */}
         <div className="grid grid-cols-4 gap-3 mb-4">
           <div className="bg-white rounded-lg shadow p-3 text-center">
@@ -397,12 +504,19 @@ export default function AdminLeadsPage() {
                 <div
                   key={lead.id}
                   className={`p-4 hover:bg-ivory/30 cursor-pointer transition-colors relative ${
-                    isNewLead(lead.created_at) ? 'bg-green-50 border-l-4 border-l-verde' : ''
+                    isNewLead(lead) ? 'bg-green-50 border-l-4 border-l-verde' : ''
                   }`}
-                  onClick={() => setSelectedLead(lead)}
+                  onClick={() => {
+                    setSelectedLead(lead);
+                    setEditedLead(lead);
+                    setHasUnsavedChanges(false);
+                    if (isNewLead(lead)) {
+                      markLeadAsViewed(lead.id);
+                    }
+                  }}
                 >
                   {/* New Lead Indicator */}
-                  {isNewLead(lead.created_at) && (
+                  {isNewLead(lead) && (
                     <div className="absolute top-2 right-2">
                       <div className="w-3 h-3 bg-verde rounded-full animate-pulse"></div>
                     </div>
@@ -410,15 +524,12 @@ export default function AdminLeadsPage() {
                   
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="flex-shrink-0">
-                        <span className="text-lg">{getPriorityIcon(lead.priority)}</span>
-                      </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center space-x-2">
                           <p className="text-sm font-semibold text-charcoal truncate">
                             {lead.first_name} {lead.last_name}
                           </p>
-                          {isNewLead(lead.created_at) && (
+                          {isNewLead(lead) && (
                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-verde text-white">
                               NEW
                             </span>
@@ -465,98 +576,247 @@ export default function AdminLeadsPage() {
       </div>
 
       {/* Lead Detail Modal */}
-      {selectedLead && (
+      {selectedLead && editedLead && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-warm-gray/20">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="p-6 border-b border-warm-gray/20 bg-gradient-to-r from-ivory to-white">
               <div className="flex items-center justify-between">
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <h3 className="text-xl font-didot text-charcoal">
-                      {selectedLead.first_name} {selectedLead.last_name}
-                    </h3>
-                    {isNewLead(selectedLead.created_at) && (
-                      <span className="inline-flex items-center px-2 py-1 rounded text-sm font-medium bg-verde text-white animate-pulse">
-                        NEW LEAD
-                      </span>
-                    )}
+                <div className="flex items-center space-x-4">
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <h3 className="text-xl font-didot text-charcoal">
+                        {selectedLead.first_name} {selectedLead.last_name}
+                      </h3>
+                      {isNewLead(selectedLead) && (
+                        <span className="inline-flex items-center px-2 py-1 rounded text-sm font-medium bg-verde text-white animate-pulse">
+                          NEW LEAD
+                        </span>
+                      )}
+                    </div>
+                    <div className="space-y-1 mt-2">
+                      <div className="flex items-center space-x-2">
+                        <p className="text-warm-gray">{selectedLead.email}</p>
+                        <button
+                          onClick={() => navigator.clipboard.writeText(selectedLead.email)}
+                          className="text-xs text-gold hover:text-gold/80 transition-colors"
+                          title="Copy email"
+                        >
+                          📋
+                        </button>
+                      </div>
+                      {selectedLead.phone && (
+                        <div className="flex items-center space-x-2">
+                          <p className="text-warm-gray text-sm">{selectedLead.phone}</p>
+                          <button
+                            onClick={() => navigator.clipboard.writeText(selectedLead.phone || '')}
+                            className="text-xs text-gold hover:text-gold/80 transition-colors"
+                            title="Copy phone"
+                          >
+                            📋
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-warm-gray">{selectedLead.email}</p>
                 </div>
-                <button
-                  onClick={() => setSelectedLead(null)}
-                  className="text-warm-gray hover:text-charcoal transition-colors"
-                >
-                  <span className="text-xl">×</span>
-                </button>
+                
+                <div className="flex items-center space-x-3">
+                  {hasUnsavedChanges && (
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                      <span className="text-sm text-orange-600 font-medium">Unsaved changes</span>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => {
+                      setSelectedLead(null);
+                      setEditedLead(null);
+                      setHasUnsavedChanges(false);
+                    }}
+                    className="text-warm-gray hover:text-charcoal transition-colors p-2 hover:bg-gray-50 rounded-lg"
+                  >
+                    <span className="text-xl">×</span>
+                  </button>
+                </div>
               </div>
             </div>
 
             <div className="p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                <div>
-                  <p className="text-sm text-warm-gray">Status</p>
-                  <span className={`inline-block px-2 py-1 text-sm rounded-full ${getStatusColor(selectedLead.status)}`}>
-                    {selectedLead.status.replace('_', ' ')}
-                  </span>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Lead Details - Left Column */}
+                <div className="lg:col-span-2 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-warm-gray mb-1">Status</p>
+                      <select
+                        value={editedLead.status}
+                        onChange={(e) => handleLeadChange('status', e.target.value)}
+                        className={`w-full px-3 py-2 text-sm rounded-lg border border-warm-gray/30 font-medium focus:ring-2 focus:ring-gold ${getStatusColor(editedLead.status)}`}
+                      >
+                        <option value="new">New</option>
+                        <option value="contacted">Contacted</option>
+                        <option value="qualified">Qualified</option>
+                        <option value="proposal_sent">Proposal Sent</option>
+                        <option value="converted">Converted</option>
+                        <option value="lost">Lost</option>
+                      </select>
+                    </div>
+                    
+                    {selectedLead.session_type_interest && (
+                      <div>
+                        <p className="text-sm text-warm-gray mb-1">Session Interest</p>
+                        <p className="text-charcoal bg-ivory/30 px-3 py-2 rounded-lg text-sm">{selectedLead.session_type_interest}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {selectedLead.budget_range && (
+                      <div>
+                        <p className="text-sm text-warm-gray mb-1">Budget Range</p>
+                        <p className="text-charcoal bg-gold/10 px-3 py-2 rounded-lg text-sm">{selectedLead.budget_range}</p>
+                      </div>
+                    )}
+                    
+                    {selectedLead.lead_source && (
+                      <div>
+                        <p className="text-sm text-warm-gray mb-1">Lead Source</p>
+                        <p className="text-charcoal bg-verde/10 px-3 py-2 rounded-lg text-sm">{selectedLead.lead_source}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {selectedLead.preferred_timeline && (
+                      <div>
+                        <p className="text-sm text-warm-gray mb-1">Timeline</p>
+                        <p className="text-charcoal bg-blue-50 px-3 py-2 rounded-lg text-sm">{selectedLead.preferred_timeline}</p>
+                      </div>
+                    )}
+                    
+                    {selectedLead.preferred_time && (
+                      <div>
+                        <p className="text-sm text-warm-gray mb-1">Preferred Time</p>
+                        <p className="text-charcoal bg-purple-50 px-3 py-2 rounded-lg text-sm">{selectedLead.preferred_time}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedLead.preferred_session_date && (
+                    <div>
+                      <p className="text-sm text-warm-gray mb-1">Preferred Session Date</p>
+                      <p className="text-charcoal bg-green-50 px-3 py-2 rounded-lg text-sm">
+                        📅 {new Date(selectedLead.preferred_session_date).toLocaleDateString('en-US', { 
+                          weekday: 'long', 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}
+                      </p>
+                    </div>
+                  )}
+
+                  {selectedLead.message && (
+                    <div>
+                      <p className="text-sm text-warm-gray mb-2">Initial Message</p>
+                      <div className="bg-ivory/50 rounded-lg p-4 border-l-4 border-gold">
+                        <p className="text-charcoal italic">"{selectedLead.message}"</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <p className="text-sm text-warm-gray">Priority</p>
-                  <span className="text-sm text-charcoal">
-                    {getPriorityIcon(selectedLead.priority)} {selectedLead.priority}
-                  </span>
+
+                {/* Notes Section - Right Column */}
+                <div className="lg:col-span-1">
+                  <div className="bg-gray-50 rounded-lg p-4 h-full">
+                    <label className="block text-sm font-medium text-charcoal mb-2">
+                      📝 Internal Notes
+                    </label>
+                    <textarea
+                      value={editedLead.notes || ''}
+                      onChange={(e) => handleLeadChange('notes', e.target.value)}
+                      placeholder="Add your notes about this lead..."
+                      rows={12}
+                      className="w-full px-3 py-2 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent resize-none text-sm"
+                    />
+                    <p className="text-xs text-warm-gray mt-1">
+                      These notes are private and only visible to admins
+                    </p>
+                  </div>
                 </div>
-                {selectedLead.session_type_interest && (
-                  <div>
-                    <p className="text-sm text-warm-gray">Session Interest</p>
-                    <p className="text-charcoal">{selectedLead.session_type_interest}</p>
-                  </div>
-                )}
-                {selectedLead.budget_range && (
-                  <div>
-                    <p className="text-sm text-warm-gray">Budget Range</p>
-                    <p className="text-charcoal">{selectedLead.budget_range}</p>
-                  </div>
-                )}
-                {selectedLead.lead_source && (
-                  <div>
-                    <p className="text-sm text-warm-gray">Lead Source</p>
-                    <p className="text-charcoal">{selectedLead.lead_source}</p>
-                  </div>
-                )}
-                {selectedLead.preferred_timeline && (
-                  <div>
-                    <p className="text-sm text-warm-gray">Timeline</p>
-                    <p className="text-charcoal">{selectedLead.preferred_timeline}</p>
-                  </div>
-                )}
               </div>
 
-              {selectedLead.message && (
-                <div className="mb-6">
-                  <p className="text-sm text-warm-gray mb-2">Initial Message</p>
-                  <div className="bg-ivory/50 rounded-lg p-4">
-                    <p className="text-charcoal">{selectedLead.message}</p>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0 pt-4 border-t border-warm-gray/20">
+              {/* Footer */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0 pt-6 mt-6 border-t border-warm-gray/20">
                 <div className="text-sm text-warm-gray">
-                  <p>Created: {formatDate(selectedLead.created_at)} ({isNewLead(selectedLead.created_at) ? 'NEW' : 'Older'})</p>
+                  <p>Created: {formatDate(selectedLead.created_at)} ({isNewLead(selectedLead) ? 'NEW' : 'Viewed'})</p>
                   <p>Updated: {formatDate(selectedLead.updated_at)}</p>
+                  {selectedLead.last_viewed_at && (
+                    <p>Last Viewed: {formatDate(selectedLead.last_viewed_at)}</p>
+                  )}
                 </div>
+                
                 <div className="flex items-center space-x-3">
                   <button
-                    onClick={() => updateLeadStatus(selectedLead.id, selectedLead.status === 'new' ? 'contacted' : 'qualified')}
-                    className="bg-gold text-white px-4 py-2 rounded-lg hover:bg-gold/90 transition-colors text-sm"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors text-sm font-medium flex items-center space-x-2"
                   >
-                    {selectedLead.status === 'new' ? 'Mark Contacted' : 'Update Status'}
+                    <span>🗑️</span>
+                    <span>Delete</span>
                   </button>
+                  
+                  {hasUnsavedChanges && (
+                    <button
+                      onClick={saveLeadChanges}
+                      className="bg-gold text-white px-6 py-2 rounded-lg hover:bg-gold/90 transition-colors text-sm font-medium flex items-center space-x-2"
+                    >
+                      <span>💾</span>
+                      <span>Save Changes</span>
+                    </button>
+                  )}
+                  
                   <button className="bg-verde text-white px-4 py-2 rounded-lg hover:bg-verde/90 transition-colors text-sm">
                     Convert to Session
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && selectedLead && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-60">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <span className="text-red-600 text-xl">⚠️</span>
+              </div>
+              <h3 className="text-lg font-didot text-charcoal mb-2">
+                Delete Lead
+              </h3>
+              <p className="text-sm text-warm-gray mb-6">
+                Are you sure you want to delete <strong>{selectedLead.first_name} {selectedLead.last_name}</strong>? 
+                This action cannot be undone and will permanently remove all lead information and notes.
+              </p>
+              <div className="flex items-center justify-center space-x-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 text-warm-gray hover:text-charcoal transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    deleteLead(selectedLead.id);
+                    setShowDeleteConfirm(false);
+                  }}
+                  className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
+                >
+                  🗑️ Delete Lead
+                </button>
               </div>
             </div>
           </div>
@@ -610,26 +870,74 @@ export default function AdminLeadsPage() {
                   </div>
                 </div>
 
-                {/* Existing Client Selection */}
+                {/* Existing Client Search */}
                 {isExistingClient && (
-                  <div>
+                  <div className="relative client-search-container">
                     <label className="block text-sm font-medium text-charcoal mb-1">
-                      Select Existing Client *
+                      Search Existing Client *
                     </label>
-                    <select
-                      name="client_id"
-                      value={newLead.client_id || ''}
-                      onChange={handleNewLeadChange}
-                      required={isExistingClient}
+                    <input
+                      type="text"
+                      value={clientSearchQuery}
+                      onChange={(e) => {
+                        setClientSearchQuery(e.target.value);
+                        setShowClientDropdown(true);
+                        if (!e.target.value) {
+                          setNewLead(prev => ({ ...prev, client_id: null, first_name: '', last_name: '', email: '' }));
+                        }
+                      }}
+                      onFocus={() => setShowClientDropdown(true)}
+                      placeholder="Search by name or email..."
                       className="w-full px-3 py-2 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
-                    >
-                      <option value="">Select a client...</option>
-                      {clients.map((client) => (
-                        <option key={client.id} value={client.id}>
-                          {client.first_name} {client.last_name} ({client.email})
-                        </option>
-                      ))}
-                    </select>
+                      required={isExistingClient && !newLead.client_id}
+                    />
+                    
+                    {/* Client Dropdown */}
+                    {showClientDropdown && clientSearchQuery && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-warm-gray/30 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                        {clients
+                          .filter(client => 
+                            client.first_name.toLowerCase().includes(clientSearchQuery.toLowerCase()) ||
+                            client.last_name.toLowerCase().includes(clientSearchQuery.toLowerCase()) ||
+                            client.email.toLowerCase().includes(clientSearchQuery.toLowerCase())
+                          )
+                          .slice(0, 10) // Limit to 10 results
+                          .map((client) => (
+                            <div
+                              key={client.id}
+                              onClick={() => {
+                                setNewLead(prev => ({
+                                  ...prev,
+                                  client_id: client.id,
+                                  first_name: client.first_name,
+                                  last_name: client.last_name,
+                                  email: client.email
+                                }));
+                                setClientSearchQuery(`${client.first_name} ${client.last_name}`);
+                                setShowClientDropdown(false);
+                              }}
+                              className="p-3 hover:bg-ivory/30 cursor-pointer border-b border-warm-gray/10 last:border-b-0"
+                            >
+                              <div className="text-sm font-medium text-charcoal">
+                                {client.first_name} {client.last_name}
+                              </div>
+                              <div className="text-xs text-warm-gray">
+                                {client.email}
+                              </div>
+                            </div>
+                          ))
+                        }
+                        {clients.filter(client => 
+                          client.first_name.toLowerCase().includes(clientSearchQuery.toLowerCase()) ||
+                          client.last_name.toLowerCase().includes(clientSearchQuery.toLowerCase()) ||
+                          client.email.toLowerCase().includes(clientSearchQuery.toLowerCase())
+                        ).length === 0 && (
+                          <div className="p-3 text-sm text-warm-gray text-center">
+                            No clients found matching "{clientSearchQuery}"
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -761,6 +1069,19 @@ export default function AdminLeadsPage() {
                       <option value="Just exploring">Just exploring</option>
                     </select>
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-charcoal mb-1">
+                    Preferred Session Date
+                  </label>
+                  <input
+                    type="date"
+                    name="preferred_session_date"
+                    value={newLead.preferred_session_date}
+                    onChange={handleNewLeadChange}
+                    className="w-full px-3 py-2 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
+                  />
                 </div>
 
                 <div>

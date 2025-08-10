@@ -18,11 +18,16 @@ export default function AdminLoginPage() {
     setLoading(true);
     setError('');
 
-    const { error } = await signIn(email, password);
+    console.log('Attempting to sign in with:', email);
+    const { error, data } = await signIn(email, password);
+
+    console.log('Sign in result:', { error, data });
 
     if (error) {
+      console.error('Sign in error:', error);
       setError(error.message || 'An error occurred during sign in');
     } else {
+      console.log('Sign in successful, redirecting to dashboard');
       router.push('/admin/dashboard');
     }
 

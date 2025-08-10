@@ -13,7 +13,7 @@ interface DashboardStats {
 }
 
 export default function AdminDashboardPage() {
-  const { user, loading: authLoading, isAdmin, signOut } = useAdminAuth();
+  const { user, loading: authLoading, isAdmin, isSuperAdmin, signOut } = useAdminAuth();
   const [stats, setStats] = useState<DashboardStats>({
     totalClients: 0,
     totalSessions: 0,
@@ -189,7 +189,7 @@ export default function AdminDashboardPage() {
         {/* Quick Actions */}
         <div className="bg-white rounded-xl shadow-lg p-8">
           <h3 className="text-xl font-didot text-charcoal mb-6">Quick Actions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${isSuperAdmin ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
             <button
               onClick={() => router.push('/admin/leads')}
               className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-[1.02]"
@@ -225,6 +225,17 @@ export default function AdminDashboardPage() {
               <div className="font-semibold">Manage Sessions</div>
               <div className="text-sm opacity-90">Create and schedule sessions</div>
             </button>
+
+            {isSuperAdmin && (
+              <button
+                onClick={() => router.push('/admin/manage-admins')}
+                className="bg-gradient-to-r from-red-500 to-red-600 text-white p-6 rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-300 transform hover:scale-[1.02]"
+              >
+                <div className="text-3xl mb-2">👑</div>
+                <div className="font-semibold">Admin Management</div>
+                <div className="text-sm opacity-90">Manage admin users & roles</div>
+              </button>
+            )}
           </div>
         </div>
       </div>

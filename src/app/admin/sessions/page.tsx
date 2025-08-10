@@ -37,15 +37,12 @@ export default function AdminSessionsPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateSession, setShowCreateSession] = useState(false);
-  const [showEditSession, setShowEditSession] = useState(false);
-  const [editingSession, setEditingSession] = useState<Session | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const router = useRouter();
-
-  // Form state for creating sessions
-  const [formData, setFormData] = useState({
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [newSession, setNewSession] = useState({
     client_id: '',
     session_type: 'Portrait Session',
     session_title: '',
@@ -57,7 +54,7 @@ export default function AdminSessionsPage() {
     investment: '',
     status: 'Confirmed & Scheduled'
   });
-  const [saving, setSaving] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -73,9 +70,7 @@ export default function AdminSessionsPage() {
 
   const loadSessions = async () => {
     try {
-      console.log('Loading all sessions...');
-      
-      const { data: sessionsData, error: sessionsError } = await supabase
+      const { data, error } = await supabase
         .from('sessions')
         .select(`
           *,
@@ -83,12 +78,10 @@ export default function AdminSessionsPage() {
         `)
         .order('session_date', { ascending: false });
 
-      console.log('Sessions query result:', { sessionsData, sessionsError });
-
-      if (sessionsError) {
-        console.error('Error loading sessions:', sessionsError);
-      } else if (sessionsData) {
-        setSessions(sessionsData);
+      if (error) {
+        console.error('Error loading sessions:', error);
+      } else {
+        setSessions(data || []);
       }
     } catch (error) {
       console.error('Error loading sessions:', error);
@@ -99,58 +92,107 @@ export default function AdminSessionsPage() {
 
   const loadClients = async () => {
     try {
-      const { data: clientsData, error: clientsError } = await supabase
+      const { data, error } = await supabase
         .from('clients')
         .select('id, first_name, last_name, email')
-        .order('first_name', { ascending: true });
+        .order('first_name');
 
-      if (clientsError) {
-        console.error('Error loading clients:', clientsError);
-      } else if (clientsData) {
-        setClients(clientsData);
+      if (error) {
+        console.error('Error loading clients:', error);
+      } else {
+        setClients(data || []);
       }
     } catch (error) {
       console.error('Error loading clients:', error);
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleCreateSession = async () => {
-    if (!formData.client_id || !formData.session_title || !formData.session_date) {
-      alert('Please fill in all required fields: Client, Session Title, and Date');
-      return;
-    }
-
-    setSaving(true);
-
+  const updateSessionStatus = async (sessionId: string, newStatus: string) => {
     try {
-      console.log('Creating session with data:', formData);
-      
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('sessions')
-        .insert([formData])
-        .select(`
-          *,
-          clients!inner(first_name, last_name, email)
-        `)
-        .single();
-
-      console.log('Session creation result:', { data, error });
+        .update({ status: newStatus })
+        .eq('id', sessionId);
 
       if (error) {
-        console.error('Detailed error creating session:', error);
-        alert(`Error creating session: ${error.message}. Please check the console for details.`);
+        console.error('Error updating session status:', error);
+        alert('Error updating session status');
       } else {
-        console.log('Session created successfully:', data);
-        setSessions(prev => [data, ...prev]);
-        setShowCreateSession(false);
-        setFormData({
+        loadSessions();
+      }
+    } catch (error) {
+      console.error('Error updating session status:', error);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    const colors = {
+      'Confirmed & Scheduled': 'bg-verde text-white',
+      'Completed': 'bg-gold text-white',
+      'Pending': 'bg-warm-gray text-white',
+      'Cancelled': 'bg-red-500 text-white'
+    };
+    return colors[status as keyof typeof colors] || 'bg-warm-gray text-white';
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+      return 'Today';
+    } else if (diffDays === 1) {
+      return 'Tomorrow';
+    } else if (diffDays < 7) {
+      return `${diffDays} days`;
+    } else {
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+  };
+
+  const isUpcoming = (dateString: string) => {
+    const sessionDate = new Date(dateString);
+    const now = new Date();
+    const diffTime = sessionDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays >= 0 && diffDays <= 7; // Upcoming if within next 7 days
+  };
+
+  const filteredSessions = sessions.filter(session => {
+    const matchesStatus = selectedStatus === 'all' || session.status === selectedStatus;
+    const matchesSearch = searchQuery === '' || 
+      session.session_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      session.clients.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      session.clients.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      session.session_type.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return matchesStatus && matchesSearch;
+  });
+
+  const statusCounts = sessions.reduce((acc, session) => {
+    acc[session.status] = (acc[session.status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const upcomingSessions = sessions.filter(session => isUpcoming(session.session_date) && session.status === 'Confirmed & Scheduled').length;
+
+  const handleCreateSession = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreateLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('sessions')
+        .insert([newSession]);
+
+      if (error) {
+        console.error('Error creating session:', error);
+        alert('Error creating session');
+      } else {
+        setShowCreateModal(false);
+        setNewSession({
           client_id: '',
           session_type: 'Portrait Session',
           session_title: '',
@@ -162,121 +204,24 @@ export default function AdminSessionsPage() {
           investment: '',
           status: 'Confirmed & Scheduled'
         });
-        alert('Session created successfully!');
+        loadSessions();
       }
     } catch (error) {
-      console.error('Exception creating session:', error);
-      alert(`Exception creating session: ${error}. Please check the console for details.`);
+      console.error('Error creating session:', error);
+      alert('Error creating session');
     } finally {
-      setSaving(false);
+      setCreateLoading(false);
     }
   };
 
-  const handleEditSession = (session: Session) => {
-    setEditingSession(session);
-    setFormData({
-      client_id: session.client_id,
-      session_type: session.session_type,
-      session_title: session.session_title,
-      session_date: session.session_date,
-      session_time: session.session_time,
-      location: session.location,
-      duration: session.duration,
-      photographer: session.photographer,
-      investment: session.investment,
-      status: session.status
-    });
-    setShowEditSession(true);
-  };
-
-  const handleUpdateSession = async () => {
-    if (!editingSession || !formData.client_id || !formData.session_title || !formData.session_date) {
-      alert('Please fill in all required fields: Client, Session Title, and Date');
-      return;
-    }
-
-    setSaving(true);
-
-    try {
-      console.log('Updating session with data:', formData);
-      
-      const { data, error } = await supabase
-        .from('sessions')
-        .update(formData)
-        .eq('id', editingSession.id)
-        .select(`
-          *,
-          clients!inner(first_name, last_name, email)
-        `)
-        .single();
-
-      console.log('Session update result:', { data, error });
-
-      if (error) {
-        console.error('Detailed error updating session:', error);
-        alert(`Error updating session: ${error.message}. Please check the console for details.`);
-      } else {
-        console.log('Session updated successfully:', data);
-        setSessions(prev => prev.map(session => 
-          session.id === editingSession.id ? data : session
-        ));
-        setShowEditSession(false);
-        setEditingSession(null);
-        setFormData({
-          client_id: '',
-          session_type: 'Portrait Session',
-          session_title: '',
-          session_date: '',
-          session_time: '',
-          location: '',
-          duration: '2 Hours',
-          photographer: 'Sean Evans',
-          investment: '',
-          status: 'Confirmed & Scheduled'
-        });
-        alert('Session updated successfully!');
-      }
-    } catch (error) {
-      console.error('Exception updating session:', error);
-      alert(`Exception updating session: ${error}. Please check the console for details.`);
-    } finally {
-      setSaving(false);
-    }
+  const handleNewSessionChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setNewSession(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSignOut = async () => {
     await signOut();
     router.push('/admin/login');
-  };
-
-  const filteredSessions = sessions.filter(session => {
-    const matchesSearch = searchTerm === '' || 
-      session.session_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      session.clients.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      session.clients.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      session.session_type.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = filterStatus === 'all' || session.status === filterStatus;
-    
-    return matchesSearch && matchesStatus;
-  });
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const getStatusColor = (status: string) => {
-    const colors = {
-      'Confirmed & Scheduled': 'bg-verde/20 text-verde',
-      'Completed': 'bg-gold/20 text-gold',
-      'Pending': 'bg-warm-gray/20 text-warm-gray',
-      'Cancelled': 'bg-red-100 text-red-700'
-    };
-    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-700';
   };
 
   if (authLoading || loading) {
@@ -296,39 +241,35 @@ export default function AdminSessionsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-ivory to-white">
-      {/* Header */}
+      {/* Compact Header */}
       <header className="bg-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-4 sm:py-6">
+        <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
               <button
                 onClick={() => router.push('/admin/dashboard')}
-                className="text-warm-gray hover:text-charcoal transition-colors flex items-center space-x-2 group"
-                title="Back to Admin Dashboard"
+                className="text-warm-gray hover:text-charcoal transition-colors"
               >
-                <span className="text-lg group-hover:scale-110 transition-transform">←</span>
-                <span className="hidden sm:inline text-sm">Dashboard</span>
+                ←
               </button>
-              <div className="h-8 w-px bg-warm-gray/30"></div>
               <Image
                 src="/sean-evans-logo.png"
                 alt="Sean Evans Photography"
-                width={300}
-                height={120}
-                className="h-10 sm:h-14 w-auto cursor-pointer"
-                onClick={() => router.push('/admin/dashboard')}
+                width={200}
+                height={80}
+                className="h-8 w-auto"
                 priority
               />
-              <div className="h-8 w-px bg-warm-gray/30"></div>
               <div>
-                <h1 className="text-xl font-didot text-charcoal">Session Management</h1>
-                <p className="text-sm text-warm-gray">Admin Portal</p>
+                <h1 className="text-lg font-didot text-charcoal">Sessions</h1>
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-warm-gray text-sm hidden sm:inline">
-                Welcome, {user?.email?.split('@')[0]}
-              </span>
+              {upcomingSessions > 0 && (
+                <div className="bg-verde text-white px-3 py-1 rounded-full text-sm font-semibold animate-pulse">
+                  📅 {upcomingSessions} Upcoming
+                </div>
+              )}
               <button
                 onClick={handleSignOut}
                 className="text-sm text-warm-gray hover:text-charcoal transition-colors"
@@ -340,584 +281,455 @@ export default function AdminSessionsPage() {
         </div>
       </header>
 
-      {/* Breadcrumb */}
-      <div className="max-w-7xl mx-auto px-8 pt-6 pb-2">
-        <div className="flex items-center text-sm text-warm-gray space-x-2">
-          <button 
-            onClick={() => router.push('/admin/dashboard')}
-            className="hover:text-charcoal transition-colors"
-          >
-            Admin Dashboard
-          </button>
-          <span>/</span>
-          <span className="text-charcoal font-medium">Session Management</span>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-8 py-6">
-        {/* Top Actions */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
-          <div>
-            <h2 className="text-3xl font-didot text-charcoal mb-2">
-              Session Management
-            </h2>
-            <p className="text-warm-gray">
-              Create and manage photography sessions for your clients
-            </p>
+      <div className="max-w-7xl mx-auto px-4 py-4">
+        {/* Compact Stats */}
+        <div className="grid grid-cols-4 gap-3 mb-4">
+          <div className="bg-white rounded-lg shadow p-3 text-center">
+            <div className="text-lg font-bold text-charcoal">{sessions.length}</div>
+            <div className="text-xs text-warm-gray">Total</div>
           </div>
-          <button
-            onClick={() => setShowCreateSession(true)}
-            className="mt-4 sm:mt-0 bg-gradient-to-r from-gold to-gold/90 text-white px-6 py-3 rounded-lg hover:from-gold/90 hover:to-gold transition-all duration-300 transform hover:scale-[1.02] flex items-center space-x-2"
-          >
-            <span className="text-xl">+</span>
-            <span>Create Session</span>
-          </button>
-        </div>
-
-        {/* Search and Filters */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0 sm:space-x-4">
-            <div className="flex-1 max-w-md">
-              <input
-                type="text"
-                placeholder="Search sessions..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-3 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent transition-all duration-200"
-              />
-            </div>
-            <div className="flex items-center space-x-4">
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-4 py-3 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent transition-all duration-200"
-              >
-                <option value="all">All Status</option>
-                <option value="Confirmed & Scheduled">Confirmed</option>
-                <option value="Completed">Completed</option>
-                <option value="Pending">Pending</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
-              <span className="text-sm text-warm-gray">
-                {filteredSessions.length} sessions
-              </span>
-            </div>
+          <div className="bg-white rounded-lg shadow p-3 text-center">
+            <div className="text-lg font-bold text-verde">{statusCounts['Confirmed & Scheduled'] || 0}</div>
+            <div className="text-xs text-warm-gray">Confirmed</div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-3 text-center">
+            <div className="text-lg font-bold text-gold">{statusCounts.Completed || 0}</div>
+            <div className="text-xs text-warm-gray">Completed</div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-3 text-center">
+            <div className="text-lg font-bold text-blue-600">{upcomingSessions}</div>
+            <div className="text-xs text-warm-gray">Upcoming</div>
           </div>
         </div>
 
-        {/* Sessions Grid */}
-        <div className="grid gap-6">
+        {/* Compact Filters */}
+        <div className="bg-white rounded-lg shadow p-4 mb-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="px-3 py-2 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold text-sm"
+            >
+              <option value="all">All Status</option>
+              <option value="Confirmed & Scheduled">Confirmed</option>
+              <option value="Completed">Completed</option>
+              <option value="Pending">Pending</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+            
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search sessions..."
+              className="flex-1 px-3 py-2 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold text-sm"
+            />
+            
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-gold text-white px-4 py-2 rounded-lg hover:bg-gold/90 transition-colors text-sm font-medium"
+            >
+              + Add Session
+            </button>
+          </div>
+        </div>
+
+        {/* Compact Sessions List */}
+        <div className="bg-white rounded-lg shadow">
           {filteredSessions.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-lg p-12 text-center">
-              <div className="w-16 h-16 bg-ivory rounded-full mx-auto mb-4 flex items-center justify-center">
-                <span className="text-2xl">📸</span>
-              </div>
-              <h3 className="text-xl font-didot text-charcoal mb-2">
-                {searchTerm || filterStatus !== 'all' ? 'No sessions found' : 'No sessions yet'}
-              </h3>
-              <p className="text-warm-gray mb-6">
-                {searchTerm || filterStatus !== 'all'
-                  ? 'Try adjusting your search or filters' 
-                  : 'Create your first session to get started'}
-              </p>
-              {!searchTerm && filterStatus === 'all' && (
-                <button
-                  onClick={() => setShowCreateSession(true)}
-                  className="bg-gradient-to-r from-gold to-gold/90 text-white px-6 py-3 rounded-lg hover:from-gold/90 hover:to-gold transition-all duration-300 transform hover:scale-[1.02]"
-                >
-                  Create Your First Session
-                </button>
-              )}
+            <div className="text-center py-8">
+              <p className="text-warm-gray">No sessions found</p>
             </div>
           ) : (
-            filteredSessions.map((session) => (
-              <div
-                key={session.id}
-                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
-              >
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-xl font-semibold text-charcoal mb-1">
-                        {session.session_title}
-                      </h3>
-                      <p className="text-warm-gray text-sm mb-2">
-                        {session.session_type}
-                      </p>
-                      <p className="text-charcoal font-medium">
-                        {session.clients.first_name} {session.clients.last_name}
-                      </p>
-                    </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(session.status)}`}>
-                      {session.status}
-                    </span>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
-                    <div>
-                      <p className="text-warm-gray">Date</p>
-                      <p className="text-charcoal font-medium">{session.session_date}</p>
-                    </div>
-                    <div>
-                      <p className="text-warm-gray">Time</p>
-                      <p className="text-charcoal font-medium">{session.session_time}</p>
-                    </div>
-                    <div>
-                      <p className="text-warm-gray">Duration</p>
-                      <p className="text-charcoal font-medium">{session.duration}</p>
-                    </div>
-                    <div>
-                      <p className="text-warm-gray">Investment</p>
-                      <p className="text-charcoal font-medium">{session.investment}</p>
-                    </div>
-                  </div>
-                  
-                  {session.location && (
-                    <div className="mb-4">
-                      <p className="text-warm-gray text-sm">Location</p>
-                      <p className="text-charcoal">{session.location}</p>
+            <div className="divide-y divide-warm-gray/20">
+              {filteredSessions.map((session) => (
+                <div
+                  key={session.id}
+                  className={`p-4 hover:bg-ivory/30 cursor-pointer transition-colors relative ${
+                    isUpcoming(session.session_date) ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                  }`}
+                  onClick={() => setSelectedSession(session)}
+                >
+                  {/* Upcoming Indicator */}
+                  {isUpcoming(session.session_date) && (
+                    <div className="absolute top-2 right-2">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
                     </div>
                   )}
                   
-                  <div className="flex items-center justify-between pt-4 border-t border-warm-gray/10">
-                    <div className="text-sm text-warm-gray">
-                      Created {formatDate(session.created_at)}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center space-x-2">
+                          <p className="text-sm font-semibold text-charcoal truncate">
+                            {session.session_title}
+                          </p>
+                          {isUpcoming(session.session_date) && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-500 text-white">
+                              UPCOMING
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-warm-gray truncate">
+                          {session.clients.first_name} {session.clients.last_name} • {session.session_type}
+                        </p>
+                        <div className="flex items-center space-x-3 mt-1">
+                          <span className="text-xs text-charcoal bg-ivory/50 px-2 py-0.5 rounded">
+                            {session.session_date}
+                          </span>
+                          {session.session_time && (
+                            <span className="text-xs text-charcoal bg-gold/20 px-2 py-0.5 rounded">
+                              {session.session_time}
+                            </span>
+                          )}
+                          {session.investment && (
+                            <span className="text-xs text-charcoal bg-verde/20 px-2 py-0.5 rounded">
+                              {session.investment}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
+                    
                     <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => router.push(`/admin/sessions/${session.id}`)}
-                        className="text-sm text-gold hover:text-gold/80 transition-colors"
-                      >
-                        View Details
-                      </button>
-                      <button 
-                        onClick={() => handleEditSession(session)}
-                        className="text-sm text-warm-gray hover:text-charcoal transition-colors"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => window.open(`/portal/${session.id}`, '_blank')}
-                        className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
-                      >
-                        As Client
-                      </button>
+                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(session.status)}`}>
+                        {session.status === 'Confirmed & Scheduled' ? 'CONFIRMED' : session.status.toUpperCase()}
+                      </span>
+                      <span className="text-xs text-warm-gray">
+                        {formatDate(session.session_date)}
+                      </span>
                     </div>
                   </div>
+
+                  {session.location && (
+                    <div className="mt-2">
+                      <p className="text-xs text-warm-gray line-clamp-1">
+                        📍 {session.location}
+                      </p>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
       </div>
 
-      {/* Create Session Modal */}
-      {showCreateSession && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-2xl w-full my-8">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-didot text-charcoal">Create New Session</h3>
-              <button
-                onClick={() => setShowCreateSession(false)}
-                className="text-warm-gray hover:text-charcoal transition-colors"
-              >
-                <span className="text-xl">×</span>
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Client Selection */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-charcoal mb-2">
-                  Client <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formData.client_id}
-                  onChange={(e) => handleInputChange('client_id', e.target.value)}
-                  className="w-full px-4 py-3 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent transition-all duration-200"
-                  required
-                >
-                  <option value="">Select a client</option>
-                  {clients.map(client => (
-                    <option key={client.id} value={client.id}>
-                      {client.first_name} {client.last_name} ({client.email})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Session Type */}
-              <div>
-                <label className="block text-sm font-medium text-charcoal mb-2">
-                  Session Type
-                </label>
-                <select
-                  value={formData.session_type}
-                  onChange={(e) => handleInputChange('session_type', e.target.value)}
-                  className="w-full px-4 py-3 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent transition-all duration-200"
-                >
-                  <option value="Portrait Session">Portrait Session</option>
-                  <option value="Family Session">Family Session</option>
-                  <option value="Executive Session">Executive Session</option>
-                  <option value="Branding Session">Branding Session</option>
-                  <option value="Engagement Session">Engagement Session</option>
-                  <option value="Wedding">Wedding</option>
-                </select>
-              </div>
-
-              {/* Session Title */}
-              <div>
-                <label className="block text-sm font-medium text-charcoal mb-2">
-                  Session Title <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.session_title}
-                  onChange={(e) => handleInputChange('session_title', e.target.value)}
-                  className="w-full px-4 py-3 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent transition-all duration-200"
-                  placeholder="Professional Headshots & Brand Photography"
-                  required
-                />
-              </div>
-
-              {/* Date */}
-              <div>
-                <label className="block text-sm font-medium text-charcoal mb-2">
-                  Session Date <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={formData.session_date}
-                  onChange={(e) => handleInputChange('session_date', e.target.value)}
-                  className="w-full px-4 py-3 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent transition-all duration-200"
-                  required
-                />
-              </div>
-
-              {/* Time */}
-              <div>
-                <label className="block text-sm font-medium text-charcoal mb-2">
-                  Session Time
-                </label>
-                <input
-                  type="text"
-                  value={formData.session_time}
-                  onChange={(e) => handleInputChange('session_time', e.target.value)}
-                  className="w-full px-4 py-3 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent transition-all duration-200"
-                  placeholder="10:00 AM"
-                />
-              </div>
-
-              {/* Location */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-charcoal mb-2">
-                  Location
-                </label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => handleInputChange('location', e.target.value)}
-                  className="w-full px-4 py-3 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent transition-all duration-200"
-                  placeholder="Downtown Studio & Waterfront Location"
-                />
-              </div>
-
-              {/* Duration */}
-              <div>
-                <label className="block text-sm font-medium text-charcoal mb-2">
-                  Duration
-                </label>
-                <select
-                  value={formData.duration}
-                  onChange={(e) => handleInputChange('duration', e.target.value)}
-                  className="w-full px-4 py-3 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent transition-all duration-200"
-                >
-                  <option value="1 Hour">1 Hour</option>
-                  <option value="1.5 Hours">1.5 Hours</option>
-                  <option value="2 Hours">2 Hours</option>
-                  <option value="2.5 Hours">2.5 Hours</option>
-                  <option value="3 Hours">3 Hours</option>
-                  <option value="Half Day">Half Day</option>
-                  <option value="Full Day">Full Day</option>
-                </select>
-              </div>
-
-              {/* Investment */}
-              <div>
-                <label className="block text-sm font-medium text-charcoal mb-2">
-                  Investment
-                </label>
-                <input
-                  type="text"
-                  value={formData.investment}
-                  onChange={(e) => handleInputChange('investment', e.target.value)}
-                  className="w-full px-4 py-3 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent transition-all duration-200"
-                  placeholder="$897"
-                />
-              </div>
-
-              {/* Status */}
-              <div>
-                <label className="block text-sm font-medium text-charcoal mb-2">
-                  Status
-                </label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => handleInputChange('status', e.target.value)}
-                  className="w-full px-4 py-3 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent transition-all duration-200"
-                >
-                  <option value="Confirmed & Scheduled">Confirmed & Scheduled</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Completed">Completed</option>
-                  <option value="Cancelled">Cancelled</option>
-                </select>
-              </div>
-
-              {/* Photographer */}
-              <div>
-                <label className="block text-sm font-medium text-charcoal mb-2">
-                  Photographer
-                </label>
-                <input
-                  type="text"
-                  value={formData.photographer}
-                  onChange={(e) => handleInputChange('photographer', e.target.value)}
-                  className="w-full px-4 py-3 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent transition-all duration-200"
-                  placeholder="Sean Evans"
-                />
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex justify-end space-x-4 mt-8">
-              <button
-                onClick={() => setShowCreateSession(false)}
-                className="px-6 py-3 border border-warm-gray/30 text-warm-gray rounded-lg hover:text-charcoal hover:border-charcoal transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreateSession}
-                disabled={saving}
-                className="px-6 py-3 bg-gradient-to-r from-gold to-gold/90 text-white rounded-lg hover:from-gold/90 hover:to-gold transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-              >
-                {saving ? (
+      {/* Session Detail Modal - Similar to Lead Detail */}
+      {selectedSession && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-warm-gray/20">
+              <div className="flex items-center justify-between">
+                <div>
                   <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-white rounded-full animate-pulse"></div>
-                    <span>Creating...</span>
+                    <h3 className="text-xl font-didot text-charcoal">
+                      {selectedSession.session_title}
+                    </h3>
+                    {isUpcoming(selectedSession.session_date) && (
+                      <span className="inline-flex items-center px-2 py-1 rounded text-sm font-medium bg-blue-500 text-white animate-pulse">
+                        UPCOMING
+                      </span>
+                    )}
                   </div>
-                ) : (
-                  'Create Session'
+                  <p className="text-warm-gray">
+                    {selectedSession.clients.first_name} {selectedSession.clients.last_name}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setSelectedSession(null)}
+                  className="text-warm-gray hover:text-charcoal transition-colors"
+                >
+                  <span className="text-xl">×</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <div>
+                  <p className="text-sm text-warm-gray">Status</p>
+                  <span className={`inline-block px-2 py-1 text-sm rounded-full ${getStatusColor(selectedSession.status)}`}>
+                    {selectedSession.status}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-sm text-warm-gray">Session Type</p>
+                  <p className="text-charcoal">{selectedSession.session_type}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-warm-gray">Date & Time</p>
+                  <p className="text-charcoal">{selectedSession.session_date} {selectedSession.session_time}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-warm-gray">Duration</p>
+                  <p className="text-charcoal">{selectedSession.duration}</p>
+                </div>
+                {selectedSession.investment && (
+                  <div>
+                    <p className="text-sm text-warm-gray">Investment</p>
+                    <p className="text-charcoal">{selectedSession.investment}</p>
+                  </div>
                 )}
-              </button>
+                <div>
+                  <p className="text-sm text-warm-gray">Photographer</p>
+                  <p className="text-charcoal">{selectedSession.photographer}</p>
+                </div>
+              </div>
+
+              {selectedSession.location && (
+                <div className="mb-6">
+                  <p className="text-sm text-warm-gray mb-2">Location</p>
+                  <div className="bg-ivory/50 rounded-lg p-4">
+                    <p className="text-charcoal">{selectedSession.location}</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0 pt-4 border-t border-warm-gray/20">
+                <div className="text-sm text-warm-gray">
+                  <p>Created: {formatDate(selectedSession.created_at)}</p>
+                  <p>Client: {selectedSession.clients.email}</p>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => updateSessionStatus(selectedSession.id, selectedSession.status === 'Pending' ? 'Confirmed & Scheduled' : 'Completed')}
+                    className="bg-gold text-white px-4 py-2 rounded-lg hover:bg-gold/90 transition-colors text-sm"
+                  >
+                    {selectedSession.status === 'Pending' ? 'Confirm Session' : 'Mark Complete'}
+                  </button>
+                  <button 
+                    onClick={() => window.open(`/portal/${selectedSession.id}`, '_blank')}
+                    className="bg-verde text-white px-4 py-2 rounded-lg hover:bg-verde/90 transition-colors text-sm"
+                  >
+                    View Portal
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Edit Session Modal */}
-      {showEditSession && editingSession && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-2xl w-full my-8">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-didot text-charcoal">Edit Session</h3>
-              <button
-                onClick={() => {
-                  setShowEditSession(false);
-                  setEditingSession(null);
-                }}
-                className="text-warm-gray hover:text-charcoal transition-colors"
-              >
-                <span className="text-xl">×</span>
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Client Selection - Disabled for edit */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-charcoal mb-2">
-                  Client
-                </label>
-                <input
-                  type="text"
-                  value={`${editingSession.clients.first_name} ${editingSession.clients.last_name} (${editingSession.clients.email})`}
-                  disabled
-                  className="w-full px-4 py-3 border border-warm-gray/30 rounded-lg bg-gray-50 text-gray-500"
-                />
-                <p className="text-xs text-warm-gray mt-1">
-                  Cannot change client for existing session
-                </p>
-              </div>
-
-              {/* Session Type */}
-              <div>
-                <label className="block text-sm font-medium text-charcoal mb-2">
-                  Session Type
-                </label>
-                <select
-                  value={formData.session_type}
-                  onChange={(e) => handleInputChange('session_type', e.target.value)}
-                  className="w-full px-4 py-3 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent transition-all duration-200"
+      {/* Create Session Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-warm-gray/20">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-didot text-charcoal">Add New Session</h3>
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="text-warm-gray hover:text-charcoal transition-colors"
                 >
-                  <option value="Portrait Session">Portrait Session</option>
-                  <option value="Family Session">Family Session</option>
-                  <option value="Executive Session">Executive Session</option>
-                  <option value="Branding Session">Branding Session</option>
-                  <option value="Engagement Session">Engagement Session</option>
-                  <option value="Wedding">Wedding</option>
-                </select>
-              </div>
-
-              {/* Session Title */}
-              <div>
-                <label className="block text-sm font-medium text-charcoal mb-2">
-                  Session Title <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.session_title}
-                  onChange={(e) => handleInputChange('session_title', e.target.value)}
-                  className="w-full px-4 py-3 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent transition-all duration-200"
-                  placeholder="Professional Headshots & Brand Photography"
-                  required
-                />
-              </div>
-
-              {/* Date */}
-              <div>
-                <label className="block text-sm font-medium text-charcoal mb-2">
-                  Session Date <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={formData.session_date}
-                  onChange={(e) => handleInputChange('session_date', e.target.value)}
-                  className="w-full px-4 py-3 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent transition-all duration-200"
-                  required
-                />
-              </div>
-
-              {/* Time */}
-              <div>
-                <label className="block text-sm font-medium text-charcoal mb-2">
-                  Session Time
-                </label>
-                <input
-                  type="text"
-                  value={formData.session_time}
-                  onChange={(e) => handleInputChange('session_time', e.target.value)}
-                  className="w-full px-4 py-3 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent transition-all duration-200"
-                  placeholder="10:00 AM"
-                />
-              </div>
-
-              {/* Location */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-charcoal mb-2">
-                  Location
-                </label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => handleInputChange('location', e.target.value)}
-                  className="w-full px-4 py-3 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent transition-all duration-200"
-                  placeholder="Downtown Studio & Waterfront Location"
-                />
-              </div>
-
-              {/* Duration */}
-              <div>
-                <label className="block text-sm font-medium text-charcoal mb-2">
-                  Duration
-                </label>
-                <select
-                  value={formData.duration}
-                  onChange={(e) => handleInputChange('duration', e.target.value)}
-                  className="w-full px-4 py-3 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent transition-all duration-200"
-                >
-                  <option value="1 Hour">1 Hour</option>
-                  <option value="1.5 Hours">1.5 Hours</option>
-                  <option value="2 Hours">2 Hours</option>
-                  <option value="2.5 Hours">2.5 Hours</option>
-                  <option value="3 Hours">3 Hours</option>
-                  <option value="Half Day">Half Day</option>
-                  <option value="Full Day">Full Day</option>
-                </select>
-              </div>
-
-              {/* Investment */}
-              <div>
-                <label className="block text-sm font-medium text-charcoal mb-2">
-                  Investment
-                </label>
-                <input
-                  type="text"
-                  value={formData.investment}
-                  onChange={(e) => handleInputChange('investment', e.target.value)}
-                  className="w-full px-4 py-3 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent transition-all duration-200"
-                  placeholder="$897"
-                />
-              </div>
-
-              {/* Status */}
-              <div>
-                <label className="block text-sm font-medium text-charcoal mb-2">
-                  Status
-                </label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => handleInputChange('status', e.target.value)}
-                  className="w-full px-4 py-3 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent transition-all duration-200"
-                >
-                  <option value="Confirmed & Scheduled">Confirmed & Scheduled</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Completed">Completed</option>
-                  <option value="Cancelled">Cancelled</option>
-                </select>
-              </div>
-
-              {/* Photographer */}
-              <div>
-                <label className="block text-sm font-medium text-charcoal mb-2">
-                  Photographer
-                </label>
-                <input
-                  type="text"
-                  value={formData.photographer}
-                  onChange={(e) => handleInputChange('photographer', e.target.value)}
-                  className="w-full px-4 py-3 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent transition-all duration-200"
-                  placeholder="Sean Evans"
-                />
+                  <span className="text-xl">×</span>
+                </button>
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex justify-end space-x-4 mt-8">
-              <button
-                onClick={() => {
-                  setShowEditSession(false);
-                  setEditingSession(null);
-                }}
-                className="px-6 py-3 border border-warm-gray/30 text-warm-gray rounded-lg hover:text-charcoal hover:border-charcoal transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUpdateSession}
-                disabled={saving}
-                className="px-6 py-3 bg-gradient-to-r from-gold to-gold/90 text-white rounded-lg hover:from-gold/90 hover:to-gold transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-              >
-                {saving ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-white rounded-full animate-pulse"></div>
-                    <span>Updating...</span>
+            <form onSubmit={handleCreateSession} className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-charcoal mb-1">
+                    Client *
+                  </label>
+                  <select
+                    name="client_id"
+                    value={newSession.client_id}
+                    onChange={handleNewSessionChange}
+                    required
+                    className="w-full px-3 py-2 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
+                  >
+                    <option value="">Select a client...</option>
+                    {clients.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.first_name} {client.last_name} ({client.email})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-charcoal mb-1">
+                    Session Title *
+                  </label>
+                  <input
+                    type="text"
+                    name="session_title"
+                    value={newSession.session_title}
+                    onChange={handleNewSessionChange}
+                    required
+                    className="w-full px-3 py-2 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
+                    placeholder="Professional Headshots & Brand Photography"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-charcoal mb-1">
+                      Session Type
+                    </label>
+                    <select
+                      name="session_type"
+                      value={newSession.session_type}
+                      onChange={handleNewSessionChange}
+                      className="w-full px-3 py-2 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
+                    >
+                      <option value="Portrait Session">Portrait Session</option>
+                      <option value="Family Session">Family Session</option>
+                      <option value="Executive Session">Executive Session</option>
+                      <option value="Branding Session">Branding Session</option>
+                      <option value="Engagement Session">Engagement Session</option>
+                      <option value="Wedding">Wedding</option>
+                    </select>
                   </div>
-                ) : (
-                  'Update Session'
-                )}
-              </button>
-            </div>
+                  <div>
+                    <label className="block text-sm font-medium text-charcoal mb-1">
+                      Duration
+                    </label>
+                    <select
+                      name="duration"
+                      value={newSession.duration}
+                      onChange={handleNewSessionChange}
+                      className="w-full px-3 py-2 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
+                    >
+                      <option value="1 Hour">1 Hour</option>
+                      <option value="1.5 Hours">1.5 Hours</option>
+                      <option value="2 Hours">2 Hours</option>
+                      <option value="2.5 Hours">2.5 Hours</option>
+                      <option value="3 Hours">3 Hours</option>
+                      <option value="Half Day">Half Day</option>
+                      <option value="Full Day">Full Day</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-charcoal mb-1">
+                      Session Date *
+                    </label>
+                    <input
+                      type="date"
+                      name="session_date"
+                      value={newSession.session_date}
+                      onChange={handleNewSessionChange}
+                      required
+                      className="w-full px-3 py-2 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-charcoal mb-1">
+                      Time
+                    </label>
+                    <select
+                      name="session_time"
+                      value={newSession.session_time}
+                      onChange={handleNewSessionChange}
+                      className="w-full px-3 py-2 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
+                    >
+                      <option value="">Select time...</option>
+                      <option value="8:00 AM">8:00 AM</option>
+                      <option value="9:00 AM">9:00 AM</option>
+                      <option value="10:00 AM">10:00 AM</option>
+                      <option value="11:00 AM">11:00 AM</option>
+                      <option value="12:00 PM">12:00 PM</option>
+                      <option value="1:00 PM">1:00 PM</option>
+                      <option value="2:00 PM">2:00 PM</option>
+                      <option value="3:00 PM">3:00 PM</option>
+                      <option value="4:00 PM">4:00 PM</option>
+                      <option value="5:00 PM">5:00 PM</option>
+                      <option value="6:00 PM">6:00 PM</option>
+                      <option value="7:00 PM">7:00 PM</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-charcoal mb-1">
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    name="location"
+                    value={newSession.location}
+                    onChange={handleNewSessionChange}
+                    className="w-full px-3 py-2 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
+                    placeholder="Downtown Studio & Waterfront Location"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-charcoal mb-1">
+                      Investment
+                    </label>
+                    <select
+                      name="investment"
+                      value={newSession.investment}
+                      onChange={handleNewSessionChange}
+                      className="w-full px-3 py-2 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
+                    >
+                      <option value="">Select investment...</option>
+                      <option value="$500">$500</option>
+                      <option value="$750">$750</option>
+                      <option value="$1,000">$1,000</option>
+                      <option value="$1,250">$1,250</option>
+                      <option value="$1,500">$1,500</option>
+                      <option value="$1,750">$1,750</option>
+                      <option value="$2,000">$2,000</option>
+                      <option value="$2,500">$2,500</option>
+                      <option value="$3,000">$3,000</option>
+                      <option value="$3,500">$3,500</option>
+                      <option value="$4,000">$4,000</option>
+                      <option value="$5,000">$5,000</option>
+                      <option value="$7,500">$7,500</option>
+                      <option value="$10,000">$10,000</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-charcoal mb-1">
+                      Status
+                    </label>
+                    <select
+                      name="status"
+                      value={newSession.status}
+                      onChange={handleNewSessionChange}
+                      className="w-full px-3 py-2 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
+                    >
+                      <option value="Confirmed & Scheduled">Confirmed & Scheduled</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end space-x-3 mt-6 pt-4 border-t border-warm-gray/20">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 text-warm-gray hover:text-charcoal transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={createLoading}
+                  className="px-6 py-2 bg-verde text-white rounded-lg hover:bg-verde/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                >
+                  {createLoading ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Creating...</span>
+                    </div>
+                  ) : (
+                    'Create Session'
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
