@@ -189,7 +189,7 @@ export default function AdminDashboardPage() {
         {/* Quick Actions */}
         <div className="bg-white rounded-xl shadow-lg p-8">
           <h3 className="text-xl font-didot text-charcoal mb-6">Quick Actions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <button
               onClick={() => router.push('/admin/leads')}
               className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-[1.02]"
@@ -218,51 +218,12 @@ export default function AdminDashboardPage() {
             </button>
 
             <button
-              onClick={() => router.push('/admin/calendar')}
-              className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white p-6 rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all duration-300 transform hover:scale-[1.02]"
-            >
-              <div className="text-3xl mb-2">📅</div>
-              <div className="font-semibold">Calendar</div>
-              <div className="text-sm opacity-90">View schedule and sync Google Calendar</div>
-            </button>
-
-            <button
               onClick={() => router.push('/admin/sessions')}
               className="bg-gradient-to-r from-gold to-gold/90 text-white p-6 rounded-lg hover:from-gold/90 hover:to-gold transition-all duration-300 transform hover:scale-[1.02]"
             >
               <div className="text-3xl mb-2">📸</div>
               <div className="font-semibold">Manage Sessions</div>
               <div className="text-sm opacity-90">Create and schedule sessions</div>
-            </button>
-
-            <button
-              onClick={() => router.push('/admin/approvals')}
-              className="bg-gradient-to-r from-charcoal to-charcoal/90 text-white p-6 rounded-lg hover:from-charcoal/90 hover:to-charcoal transition-all duration-300 transform hover:scale-[1.02] relative"
-            >
-              <div className="text-3xl mb-2">🤖</div>
-              <div className="font-semibold">AI Approvals</div>
-              <div className="text-sm opacity-90">Review AI-generated content</div>
-              <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse">
-                !
-              </div>
-            </button>
-
-            <button
-              onClick={() => router.push('/admin/galleries')}
-              className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-[1.02]"
-            >
-              <div className="text-3xl mb-2">🖼️</div>
-              <div className="font-semibold">Gallery Management</div>
-              <div className="text-sm opacity-90">Upload and manage client galleries</div>
-            </button>
-
-            <button
-              onClick={() => router.push('/admin/invitations')}
-              className="bg-gradient-to-r from-warm-gray to-warm-gray/90 text-white p-6 rounded-lg hover:from-warm-gray/90 hover:to-warm-gray transition-all duration-300 transform hover:scale-[1.02]"
-            >
-              <div className="text-3xl mb-2">📧</div>
-              <div className="font-semibold">Send Invitations</div>
-              <div className="text-sm opacity-90">Invite new clients to register</div>
             </button>
           </div>
         </div>

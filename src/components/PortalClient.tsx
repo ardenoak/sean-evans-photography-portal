@@ -207,9 +207,8 @@ export default function PortalClient({ sessionId }: PortalClientProps) {
         return <ResourcesTab sessionId={sessionId} />;
       case 'gallery':
         return <GalleryTab 
-          sessionId={sessionId}
-          sessionType={sessionData?.sessionType || ''}
-          sessionDate={sessionData?.date || ''}
+          sessionType={sessionData?.sessionType || 'Portrait'}
+          galleryUrl="https://your-pictime-gallery-url.com"
         />;
       default:
         return null;
