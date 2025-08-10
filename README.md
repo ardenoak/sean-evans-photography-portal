@@ -1,6 +1,6 @@
 # Sean Evans Photography Client Portal
 
-A sophisticated client portal for editorial portrait photographers, built with Next.js and designed for Sean Evans Photography.
+A sophisticated AI-powered client portal for editorial portrait photographers, built with Next.js and designed for Sean Evans Photography.
 
 ## Features
 
