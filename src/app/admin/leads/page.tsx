@@ -776,6 +776,14 @@ export default function AdminLeadsPage() {
                     </button>
                   )}
                   
+                  <button 
+                    onClick={() => router.push(`/admin/proposals/${selectedLead.id}`)}
+                    className="bg-gold text-white px-4 py-2 rounded-lg hover:bg-gold/90 transition-colors text-sm font-medium flex items-center space-x-2"
+                  >
+                    <span>📋</span>
+                    <span>Generate Proposal</span>
+                  </button>
+                  
                   <button className="bg-verde text-white px-4 py-2 rounded-lg hover:bg-verde/90 transition-colors text-sm">
                     Convert to Session
                   </button>
