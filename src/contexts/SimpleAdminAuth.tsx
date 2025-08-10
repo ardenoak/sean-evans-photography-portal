@@ -29,6 +29,8 @@ export function SimpleAdminAuthProvider({ children }: { children: React.ReactNod
 
   // Check if session has expired
   const isSessionExpired = () => {
+    if (typeof window === 'undefined') return false; // Skip during SSR
+    
     const stayLoggedIn = localStorage.getItem(STAY_LOGGED_IN_KEY) === 'true';
     if (stayLoggedIn) return false;
     
@@ -40,6 +42,8 @@ export function SimpleAdminAuthProvider({ children }: { children: React.ReactNod
 
   // Set session expiry (30 minutes default)
   const setSessionExpiry = (stayLoggedIn: boolean = false) => {
+    if (typeof window === 'undefined') return; // Skip during SSR
+    
     localStorage.setItem(STAY_LOGGED_IN_KEY, stayLoggedIn.toString());
     if (!stayLoggedIn) {
       const expiresAt = Date.now() + (30 * 60 * 1000); // 30 minutes
@@ -79,6 +83,8 @@ export function SimpleAdminAuthProvider({ children }: { children: React.ReactNod
   useEffect(() => {
     const initializeAuth = async () => {
       try {
+        console.log('Initializing auth...');
+        
         // Check if session expired
         if (isSessionExpired()) {
           console.log('Session expired, logging out');
@@ -86,20 +92,31 @@ export function SimpleAdminAuthProvider({ children }: { children: React.ReactNod
           return;
         }
 
-        // Check current Supabase session
-        const { data: { session } } = await supabase.auth.getSession();
+        // Check current Supabase session with timeout
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Auth initialization timeout')), 10000);
+        });
+
+        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
         
         if (session?.user?.email) {
+          console.log('Found session, loading admin user...');
           const adminUser = await loadAdminUser(session.user.email);
           if (adminUser) {
+            console.log('Admin user loaded:', adminUser.email);
             setUser(adminUser);
           } else {
+            console.log('Admin user not found, signing out');
             await supabase.auth.signOut();
           }
+        } else {
+          console.log('No session found');
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
       } finally {
+        console.log('Auth initialization complete');
         setLoading(false);
       }
     };
@@ -161,8 +178,12 @@ export function SimpleAdminAuthProvider({ children }: { children: React.ReactNod
     try {
       await supabase.auth.signOut();
       setUser(null);
-      localStorage.removeItem(SESSION_KEY);
-      localStorage.removeItem(STAY_LOGGED_IN_KEY);
+      
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(SESSION_KEY);
+        localStorage.removeItem(STAY_LOGGED_IN_KEY);
+      }
+      
       console.log('Logged out successfully');
     } catch (error) {
       console.error('Logout error:', error);
