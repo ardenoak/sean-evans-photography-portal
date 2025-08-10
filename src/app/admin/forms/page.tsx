@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useAdminAuth } from '@/contexts/AdminAuthContext';
+// Removed AdminAuth - direct access
 
 interface FormField {
   id: string;
@@ -91,19 +91,12 @@ const defaultFormConfig: FormConfig = {
 };
 
 export default function AdminFormsPage() {
-  const { user, loading: authLoading, isAdmin } = useAdminAuth();
+  const { user, loading: false, true } = useAdminAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!authLoading) {
-      if (!user || !isAdmin) {
-        router.push('/admin/login');
-      } else {
-        // Redirect to contact form
-        router.push('/contact');
-      }
-    }
-  }, [user, isAdmin, authLoading, router]);
+        }
+  }, [ router]);
 
   // Show loading while redirecting
   return (

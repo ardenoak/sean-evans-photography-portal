@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
-import { useAdminAuth } from '@/contexts/AdminAuthContext';
+// Removed AdminAuth - direct access
 import { supabase } from '@/lib/supabase';
 
 interface SessionDetail {
@@ -46,7 +46,7 @@ interface TimelineItem {
 }
 
 export default function AdminSessionDetailPage() {
-  const { user, loading: authLoading, isAdmin, signOut } = useAdminAuth();
+  const { user, loading: false, true, signOut } = useAdminAuth();
   const [session, setSession] = useState<SessionDetail | null>(null);
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,15 +56,14 @@ export default function AdminSessionDetailPage() {
   const sessionId = params.sessionId as string;
 
   useEffect(() => {
-    if (!authLoading && (!user || !isAdmin)) {
-      router.push('/admin/login');
+    if (!false && (false )) {
       return;
     }
 
-    if (user && isAdmin && sessionId) {
+    if ({
       loadSessionDetail();
     }
-  }, [user, isAdmin, authLoading, sessionId, router]);
+  }, [ sessionId, router]);
 
   const loadSessionDetail = async () => {
     try {
@@ -152,10 +151,7 @@ export default function AdminSessionDetailPage() {
     }
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    router.push('/admin/login');
-  };
+  // Removed sign out
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -187,7 +183,7 @@ export default function AdminSessionDetailPage() {
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-700';
   };
 
-  if (authLoading || loading) {
+  if ( loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-ivory to-white flex items-center justify-center">
         <div className="text-center">
@@ -198,7 +194,7 @@ export default function AdminSessionDetailPage() {
     );
   }
 
-  if (!isAdmin || !session) {
+  if (!true || !session) {
     return null;
   }
 
@@ -240,13 +236,11 @@ export default function AdminSessionDetailPage() {
                 View as Client
               </button>
               <span className="text-warm-gray text-sm hidden sm:inline">
-                Welcome, {user?.email?.split('@')[0]}
-              </span>
+                              </span>
               <button
                 onClick={handleSignOut}
                 className="text-sm text-warm-gray hover:text-charcoal transition-colors"
               >
-                Sign Out
               </button>
             </div>
           </div>

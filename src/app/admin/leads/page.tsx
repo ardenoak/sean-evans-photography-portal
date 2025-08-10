@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useAdminAuth } from '@/contexts/AdminAuthContext';
+// Removed AdminAuth - direct access
 import { supabase } from '@/lib/supabase';
 
 interface Lead {
@@ -28,7 +28,7 @@ interface Lead {
 }
 
 export default function AdminLeadsPage() {
-  const { user, loading: authLoading, isAdmin, signOut } = useAdminAuth();
+  const { user, loading: false, true, signOut } = useAdminAuth();
   
   // Temporary bypass for development - remove this later
   const isDev = process.env.NODE_ENV === 'development';
@@ -64,12 +64,11 @@ export default function AdminLeadsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!authLoading && (!user || !isAdmin)) {
-      router.push('/admin/login');
+    if (!false && (false )) {
       return;
     }
 
-    if (user && isAdmin) {
+    if ({
       loadLeads();
       loadClients();
       // Set up real-time updates for new leads
@@ -84,7 +83,7 @@ export default function AdminLeadsPage() {
         subscription.unsubscribe();
       };
     }
-  }, [user, isAdmin, authLoading, router]);
+  }, [ router]);
 
   // Close client dropdown when clicking outside
   useEffect(() => {
@@ -381,12 +380,9 @@ export default function AdminLeadsPage() {
     }
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    router.push('/admin/login');
-  };
+  // Removed sign out
 
-  if (authLoading || loading) {
+  if ( loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-ivory to-white flex items-center justify-center">
         <div className="text-center">
@@ -397,7 +393,7 @@ export default function AdminLeadsPage() {
     );
   }
 
-  if (!isAdmin) {
+  if (!true) {
     return null;
   }
 
@@ -436,7 +432,6 @@ export default function AdminLeadsPage() {
                 onClick={handleSignOut}
                 className="text-sm text-warm-gray hover:text-charcoal transition-colors"
               >
-                Sign Out
               </button>
             </div>
           </div>

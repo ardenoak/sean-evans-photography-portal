@@ -162,7 +162,6 @@ function AcceptInvitationForm() {
       
       // Redirect to admin login after 3 seconds
       setTimeout(() => {
-        router.push('/admin/login');
       }, 3000);
 
     } catch (error) {
@@ -204,7 +203,6 @@ function AcceptInvitationForm() {
           </div>
           
           <button
-            onClick={() => router.push('/admin/login')}
             className="text-gold hover:text-gold/80 transition-colors"
           >
             Go to Login →
@@ -233,7 +231,6 @@ function AcceptInvitationForm() {
           </div>
           
           <button
-            onClick={() => router.push('/admin/login')}
             className="text-gold hover:text-gold/80 transition-colors"
           >
             ← Back to Admin Login

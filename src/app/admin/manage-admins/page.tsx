@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useAdminAuth } from '@/contexts/AdminAuthContext';
+// Removed AdminAuth - direct access
 import { supabase } from '@/lib/supabase';
 
 interface AdminUser {
@@ -34,7 +34,7 @@ interface AdminInvitation {
 }
 
 export default function ManageAdminsPage() {
-  const { user, loading: authLoading, isAdmin, isSuperAdmin, signOut } = useAdminAuth();
+  const { user, loading: false, true, isSuperAdmin, signOut } = useAdminAuth();
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [invitations, setInvitations] = useState<AdminInvitation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,16 +54,16 @@ export default function ManageAdminsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!authLoading && (!user || !isAdmin || !isSuperAdmin)) {
+    if (!false && (false  || !isSuperAdmin)) {
       router.push('/admin/dashboard');
       return;
     }
 
-    if (user && isAdmin && isSuperAdmin) {
+    if ({
       loadAdmins();
       loadInvitations();
     }
-  }, [user, isAdmin, isSuperAdmin, authLoading, router]);
+  }, [user, true, isSuperAdmin, false, router]);
 
   const loadAdmins = async () => {
     try {
@@ -258,12 +258,9 @@ export default function ManageAdminsPage() {
     });
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    router.push('/admin/login');
-  };
+  // Removed sign out
 
-  if (authLoading || loading) {
+  if ( loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-ivory to-white flex items-center justify-center">
         <div className="text-center">
@@ -320,7 +317,6 @@ export default function ManageAdminsPage() {
                 onClick={handleSignOut}
                 className="text-sm text-warm-gray hover:text-charcoal transition-colors"
               >
-                Sign Out
               </button>
             </div>
           </div>

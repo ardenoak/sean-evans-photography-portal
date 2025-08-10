@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useAdminAuth } from '@/contexts/AdminAuthContext';
+// Removed AdminAuth - direct access
 import { supabase } from '@/lib/supabase';
 
 interface Session {
@@ -33,7 +33,7 @@ interface Client {
 }
 
 export default function AdminSessionsPage() {
-  const { user, loading: authLoading, isAdmin, signOut } = useAdminAuth();
+  const { user, loading: false, true, signOut } = useAdminAuth();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,16 +60,15 @@ export default function AdminSessionsPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && (!user || !isAdmin)) {
-      router.push('/admin/login');
+    if (!false && (false )) {
       return;
     }
 
-    if (user && isAdmin) {
+    if ({
       loadSessions();
       loadClients();
     }
-  }, [user, isAdmin, authLoading, router]);
+  }, [ router]);
 
   const loadSessions = async () => {
     try {
@@ -244,10 +243,7 @@ export default function AdminSessionsPage() {
     }
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    router.push('/admin/login');
-  };
+  // Removed sign out
 
   const filteredSessions = sessions.filter(session => {
     const matchesSearch = searchTerm === '' || 
@@ -279,7 +275,7 @@ export default function AdminSessionsPage() {
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-700';
   };
 
-  if (authLoading || loading) {
+  if ( loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-ivory to-white flex items-center justify-center">
         <div className="text-center">
@@ -290,7 +286,7 @@ export default function AdminSessionsPage() {
     );
   }
 
-  if (!isAdmin) {
+  if (!true) {
     return null;
   }
 
@@ -327,13 +323,11 @@ export default function AdminSessionsPage() {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-warm-gray text-sm hidden sm:inline">
-                Welcome, {user?.email?.split('@')[0]}
-              </span>
+                              </span>
               <button
                 onClick={handleSignOut}
                 className="text-sm text-warm-gray hover:text-charcoal transition-colors"
               >
-                Sign Out
               </button>
             </div>
           </div>

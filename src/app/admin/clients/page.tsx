@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { supabase } from '@/lib/supabase';
 
 interface Client {
@@ -21,7 +20,6 @@ interface Client {
 }
 
 export default function AdminClientsPage() {
-  const { user, loading: authLoading, isAdmin, signOut } = useAdminAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -30,15 +28,8 @@ export default function AdminClientsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!authLoading && (!user || !isAdmin)) {
-      router.push('/admin/login');
-      return;
-    }
-
-    if (user && isAdmin) {
-      loadClients();
-    }
-  }, [user, isAdmin, authLoading, router]);
+    loadClients();
+  }, []);
 
   const loadClients = async () => {
     try {
@@ -72,11 +63,6 @@ export default function AdminClientsPage() {
     }
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    router.push('/admin/login');
-  };
-
   const filteredClients = clients.filter(client => {
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -99,7 +85,7 @@ export default function AdminClientsPage() {
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
   };
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-ivory to-white flex items-center justify-center">
         <div className="text-center">
@@ -108,10 +94,6 @@ export default function AdminClientsPage() {
         </div>
       </div>
     );
-  }
-
-  if (!isAdmin) {
-    return null;
   }
 
   return (
@@ -147,13 +129,11 @@ export default function AdminClientsPage() {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-warm-gray text-sm hidden sm:inline">
-                Welcome, {user?.email?.split('@')[0]}
-              </span>
+                              </span>
               <button
                 onClick={handleSignOut}
                 className="text-sm text-warm-gray hover:text-charcoal transition-colors"
               >
-                Sign Out
               </button>
             </div>
           </div>
