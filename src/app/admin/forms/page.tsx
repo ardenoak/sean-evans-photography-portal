@@ -95,8 +95,8 @@ export default function AdminFormsPage() {
   const router = useRouter();
 
   useEffect(() => {
-        }
-  }, [ router]);
+    // Direct access - no auth needed
+  }, []);
 
   // Show loading while redirecting
   return (

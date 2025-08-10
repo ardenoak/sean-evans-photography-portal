@@ -54,16 +54,10 @@ export default function ManageAdminsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!false && (false  || !isSuperAdmin)) {
-      router.push('/admin/dashboard');
-      return;
-    }
-
-    if ({
-      loadAdmins();
-      loadInvitations();
-    }
-  }, [user, true, isSuperAdmin, false, router]);
+    // Direct admin access - load data
+    loadAdmins();
+    loadInvitations();
+  }, []);
 
   const loadAdmins = async () => {
     try {
@@ -116,7 +110,7 @@ export default function ManageAdminsPage() {
         last_name: newAdmin.last_name,
         role: newAdmin.role,
         invitation_token: invitationToken,
-        invited_by: user?.email || '',
+        invited_by: 'admin@seanevansphotography.com',
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
       });
       
@@ -128,7 +122,7 @@ export default function ManageAdminsPage() {
           last_name: newAdmin.last_name,
           role: newAdmin.role,
           invitation_token: invitationToken,
-          invited_by: user?.email || '',
+          invited_by: 'admin@seanevansphotography.com',
           expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
         }]);
 
@@ -150,7 +144,7 @@ export default function ManageAdminsPage() {
             subject: 'Welcome to Sean Evans Photography Team',
             invitation_url: invitationUrl,
             role: newAdmin.role,
-            invited_by: user?.email || 'Sean Evans Photography',
+            invited_by: 'Sean Evans Photography',
             expires_in_days: 7
           };
           
@@ -271,21 +265,7 @@ export default function ManageAdminsPage() {
     );
   }
 
-  if (!isSuperAdmin) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-ivory to-white flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-warm-gray">Access denied. Super admin privileges required.</p>
-          <button
-            onClick={() => router.push('/admin/dashboard')}
-            className="mt-4 text-gold hover:text-gold/80 transition-colors"
-          >
-            Back to Dashboard
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Direct admin access - no auth check needed
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-ivory to-white">
@@ -313,11 +293,7 @@ export default function ManageAdminsPage() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <button
-                onClick={
-                className="text-sm text-warm-gray hover:text-charcoal transition-colors"
-              >
-              </button>
+              {/* Direct admin access - no auth needed */}
             </div>
           </div>
         </div>
@@ -372,7 +348,7 @@ export default function ManageAdminsPage() {
                       )}
                     </div>
                     
-                    {admin.email !== user?.email && (
+                    {true && (
                       <button
                         onClick={() => toggleAdminStatus(admin.id, admin.is_active)}
                         className={`px-3 py-1 text-sm rounded-lg transition-colors ${admin.is_active 

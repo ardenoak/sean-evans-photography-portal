@@ -56,14 +56,12 @@ export default function AdminSessionDetailPage() {
   const sessionId = params.sessionId as string;
 
   useEffect(() => {
-    if (!false && (false )) {
-      return;
-    }
+    // Direct admin access - no auth check needed
 
-    if ({
+    if (sessionId) {
       loadSessionDetail();
     }
-  }, [ sessionId, router]);
+  }, [sessionId]);
 
   const loadSessionDetail = async () => {
     try {
@@ -237,11 +235,7 @@ export default function AdminSessionDetailPage() {
               </button>
               <span className="text-warm-gray text-sm hidden sm:inline">
                               </span>
-              <button
-                onClick={
-                className="text-sm text-warm-gray hover:text-charcoal transition-colors"
-              >
-              </button>
+              {/* Direct admin access - no auth needed */}
             </div>
           </div>
         </div>
