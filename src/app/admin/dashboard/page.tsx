@@ -189,7 +189,7 @@ export default function AdminDashboardPage() {
         {/* Quick Actions */}
         <div className="bg-white rounded-xl shadow-lg p-8">
           <h3 className="text-xl font-didot text-charcoal mb-6">Quick Actions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             <button
               onClick={() => router.push('/admin/leads')}
               className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-[1.02]"
@@ -197,6 +197,15 @@ export default function AdminDashboardPage() {
               <div className="text-3xl mb-2">🎯</div>
               <div className="font-semibold">Lead Management</div>
               <div className="text-sm opacity-90">Track potential clients</div>
+            </button>
+
+            <button
+              onClick={() => router.push('/admin/forms')}
+              className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-[1.02]"
+            >
+              <div className="text-3xl mb-2">📝</div>
+              <div className="font-semibold">Form Builder</div>
+              <div className="text-sm opacity-90">Create embeddable forms</div>
             </button>
 
             <button
