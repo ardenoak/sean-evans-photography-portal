@@ -57,7 +57,7 @@ export default function TestLoginPage() {
       });
       
       try {
-        const authResult = await Promise.race([authPromise, authTimeout]);
+        const authResult = await Promise.race([authPromise, authTimeout]) as any;
         log(`Auth result: ${JSON.stringify({ 
           success: !authResult.error, 
           error: authResult.error?.message,
