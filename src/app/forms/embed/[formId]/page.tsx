@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
@@ -16,7 +16,8 @@ interface FormSubmission {
   [key: string]: any;
 }
 
-export default function EmbeddableForm({ params }: { params: { formId: string } }) {
+export default function EmbeddableForm({ params }: { params: Promise<{ formId: string }> }) {
+  const resolvedParams = use(params);
   const [formData, setFormData] = useState<FormSubmission>({
     first_name: '',
     last_name: '',
