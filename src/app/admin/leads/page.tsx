@@ -296,7 +296,9 @@ export default function AdminLeadsPage() {
         ...newLead,
         status: 'new',
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        // Convert empty dates to null to avoid PostgreSQL date parsing errors
+        preferred_session_date: newLead.preferred_session_date || null
       };
       
       console.log('Final lead data being inserted:', leadData);
