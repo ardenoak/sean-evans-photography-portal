@@ -14,6 +14,8 @@ export interface TimelineItem {
   date: string;
   task: string;
   highlight?: boolean;
+  completed?: boolean;
+  completedDate?: string | null;
 }
 
 export interface QuickAction {

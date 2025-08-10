@@ -1,0 +1,191 @@
+{
+  "name": "Timeline Automation - Simple",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 */15 * * * *"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Every 15 Minutes",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.PORTAL_URL}}/api/n8n/timeline",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "upcoming",
+              "value": "true"
+            }
+          ]
+        }
+      },
+      "id": "get-tasks",
+      "name": "Get Pending Tasks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$json.tasks.length}}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "id": "check-tasks",
+      "name": "Has Tasks?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "inputData": "={{$json.tasks}}"
+      },
+      "id": "split-tasks",
+      "name": "Process Each Task",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.taskName}}",
+              "operation": "contains",
+              "value2": "Style guide"
+            }
+          ]
+        }
+      },
+      "id": "is-style-guide",
+      "name": "Style Guide Task?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1120, 100]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create a comprehensive style guide for {{$json.clientName}}'s {{$json.sessionType}} photography session.\n\nInclude:\n1. Wardrobe recommendations (colors, styles, fabrics)\n2. Hair & makeup suggestions  \n3. What to avoid\n4. Props/accessories\n5. Preparation timeline\n\nMake it personal and specific to their session type and date: {{$json.dueDate}}\n\nSign as Sean Evans Photography.",
+        "model": "gpt-4"
+      },
+      "id": "generate-style-guide",
+      "name": "Generate Style Guide",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [1340, 100]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.PORTAL_URL}}/api/n8n/timeline",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"taskId\": \"{{$json.id}}\",\n  \"aiContent\": \"{{$('Generate Style Guide').item.json.text}}\",\n  \"contentType\": \"style_guide\",\n  \"metadata\": {\n    \"client\": \"{{$json.clientName}}\",\n    \"sessionType\": \"{{$json.sessionType}}\"\n  }\n}"
+      },
+      "id": "submit-style-guide",
+      "name": "Submit for Approval",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1560, 100]
+    }
+  ],
+  "connections": {
+    "Every 15 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Tasks": {
+      "main": [
+        [
+          {
+            "node": "Has Tasks?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Tasks?": {
+      "main": [
+        [
+          {
+            "node": "Process Each Task",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Process Each Task": {
+      "main": [
+        [
+          {
+            "node": "Style Guide Task?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Style Guide Task?": {
+      "main": [
+        [
+          {
+            "node": "Generate Style Guide",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Generate Style Guide": {
+      "main": [
+        [
+          {
+            "node": "Submit for Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-01-10T12:00:00.000Z"
+}

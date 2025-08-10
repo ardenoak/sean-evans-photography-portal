@@ -1,0 +1,198 @@
+{
+  "name": "Session Concierge AI Chat",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat-webhook",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook-start",
+      "name": "Chat Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "your-webhook-id"
+    },
+    {
+      "parameters": {
+        "url": "={{$env.PORTAL_URL}}/api/n8n/chat-context",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "sessionId",
+              "value": "={{$json.sessionId}}"
+            }
+          ]
+        },
+        "timeout": 10000
+      },
+      "id": "get-context",
+      "name": "Get Session Context",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "messages": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are the Session Concierge for Sean Evans Photography, a warm and knowledgeable assistant helping clients with their photography sessions.\n\n## Your Role\nYou provide personalized, session-aware support with a white-glove service approach. You know the client's history, session details, timeline progress, and can provide specific, actionable advice.\n\n## Context Available:\n- Client: {{$json.context.client.fullName}} ({{$json.context.client.isReturning ? 'returning' : 'new'}} client)\n- Session: {{$json.context.session.title}} on {{$json.context.session.date}}\n- Session Phase: {{$json.context.session.phase}} ({{$json.context.session.daysUntilSession}} days away)\n- Progress: {{$json.context.session.progress.completedTasks}}/{{$json.context.session.progress.totalTasks}} tasks complete\n- Next Task: {{$json.context.timeline.nextTask?.name || 'None scheduled'}}\n- Previous Sessions: {{$json.context.history.previousSessions.length}} sessions\n\n## Personality\n- Warm, professional, and proactive\n- Detail-oriented and knowledgeable about photography\n- Supportive and reassuring\n- Provide specific, actionable advice\n- Reference client history when relevant\n- Use the client's first name: {{$json.context.client.firstName}}\n\n## Guidelines\n- Keep responses under 3 paragraphs\n- Be specific and actionable\n- Reference session timeline when relevant\n- Mention Sean personally when appropriate\n- Offer to connect them with Sean for complex questions\n- Use the rich context provided to personalize responses"
+            },
+            {
+              "role": "user", 
+              "content": "{{$json.clientMessage}}"
+            }
+          ]
+        },
+        "temperature": 0.7,
+        "maxTokens": 300
+      },
+      "id": "openai-chat",
+      "name": "Generate AI Response",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.PORTAL_URL}}/api/n8n/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"sessionId\": \"{{$json.sessionId}}\",\n  \"clientMessage\": \"{{$json.clientMessage}}\",\n  \"aiResponse\": \"{{$('Generate AI Response').item.json.response}}\",\n  \"metadata\": {\n    \"model\": \"gpt-4\",\n    \"context_used\": true,\n    \"session_phase\": \"{{$('Get Session Context').item.json.context.session.phase}}\",\n    \"client_history\": {{$('Get Session Context').item.json.context.client.isReturning}}\n  }\n}",
+        "timeout": 5000
+      },
+      "id": "log-interaction",
+      "name": "Log Chat Interaction",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"response\": \"{{$('Generate AI Response').item.json.response}}\",\n  \"suggestions\": {{$('Get Session Context').item.json.suggestedPrompts}},\n  \"sessionPhase\": \"{{$('Get Session Context').item.json.context.session.phase}}\"\n}"
+      },
+      "id": "webhook-response",
+      "name": "Send Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.clientMessage}}",
+              "operation": "contains",
+              "value2": "reschedule"
+            }
+          ],
+          "boolean": [],
+          "number": []
+        }
+      },
+      "id": "check-reschedule",
+      "name": "Check for Reschedule Request",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 500]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.PORTAL_URL}}/api/n8n/timeline",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"taskId\": \"notification-task-id\",\n  \"aiContent\": \"Client {{$('Get Session Context').item.json.context.client.fullName}} has requested to reschedule their {{$('Get Session Context').item.json.context.session.title}} session.\",\n  \"contentType\": \"reschedule_request\",\n  \"metadata\": {\n    \"sessionId\": \"{{$json.sessionId}}\",\n    \"originalMessage\": \"{{$json.clientMessage}}\"\n  }\n}",
+      },
+      "id": "notify-reschedule",
+      "name": "Notify Sean of Reschedule",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [900, 500]
+    }
+  ],
+  "connections": {
+    "Chat Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Session Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Session Context": {
+      "main": [
+        [
+          {
+            "node": "Generate AI Response", 
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check for Reschedule Request",
+            "type": "main", 
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate AI Response": {
+      "main": [
+        [
+          {
+            "node": "Log Chat Interaction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Chat Interaction": {
+      "main": [
+        [
+          {
+            "node": "Send Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check for Reschedule Request": {
+      "main": [
+        [
+          {
+            "node": "Notify Sean of Reschedule",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-01-10T12:00:00.000Z",
+      "updatedAt": "2025-01-10T12:00:00.000Z",
+      "id": "1",
+      "name": "photography-portal"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-01-10T12:00:00.000Z",
+  "versionId": "1"
+}

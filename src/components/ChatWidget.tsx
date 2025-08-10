@@ -6,9 +6,10 @@ interface ChatWidgetProps {
   isOpen: boolean;
   onClose: () => void;
   clientName: string;
+  sessionId: string;
 }
 
-export default function ChatWidget({ isOpen, onClose, clientName }: ChatWidgetProps) {
+export default function ChatWidget({ isOpen, onClose, clientName, sessionId }: ChatWidgetProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -78,7 +79,7 @@ export default function ChatWidget({ isOpen, onClose, clientName }: ChatWidgetPr
     }, 1500);
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
     const userMessage: ChatMessage = {
@@ -89,20 +90,51 @@ export default function ChatWidget({ isOpen, onClose, clientName }: ChatWidgetPr
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentMessage = inputMessage;
     setInputMessage('');
     setIsTyping(true);
 
-    // Simulate AI typing delay
-    setTimeout(() => {
+    try {
+      // Try n8n webhook first (configure this URL after setting up n8n)
+      const webhookUrl = process.env.NEXT_PUBLIC_N8N_CHAT_WEBHOOK || '/api/n8n/chat';
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionId,
+          clientMessage: currentMessage,
+          clientName,
+          context: 'session_concierge'
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const aiResponse: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          message: data.response || getAIResponse(currentMessage),
+          timestamp: new Date(),
+          sender: 'assistant'
+        };
+        setMessages(prev => [...prev, aiResponse]);
+      } else {
+        throw new Error('AI service unavailable');
+      }
+    } catch (error) {
+      console.error('Chat API error:', error);
+      // Fallback to local response
       const aiResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        message: getAIResponse(inputMessage),
+        message: getAIResponse(currentMessage),
         timestamp: new Date(),
         sender: 'assistant'
       };
       setMessages(prev => [...prev, aiResponse]);
+    } finally {
       setIsTyping(false);
-    }, 2000);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

@@ -66,19 +66,32 @@ export default function DashboardTab({ sessionData, timeline, quickActions, onCh
                     className="flex items-start space-x-4 group hover:bg-ivory/50 p-2 rounded-lg transition-colors duration-200"
                     style={{ animationDelay: `${index * 150}ms` }}
                   >
-                    <div className={`w-3 h-3 rounded-full mt-2 transition-colors duration-300 ${
-                      item.highlight 
-                        ? 'bg-gold shadow-lg shadow-gold/30' 
-                        : 'bg-warm-gray/40 group-hover:bg-verde/60'
-                    }`}></div>
+                    <div className={`w-3 h-3 rounded-full mt-2 transition-colors duration-300 flex items-center justify-center ${
+                      item.completed
+                        ? 'bg-green-500 shadow-lg shadow-green/30'
+                        : item.highlight 
+                          ? 'bg-gold shadow-lg shadow-gold/30' 
+                          : 'bg-warm-gray/40 group-hover:bg-verde/60'
+                    }`}>
+                      {item.completed && (
+                        <span className="text-white text-xs">✓</span>
+                      )}
+                    </div>
                     <div>
-                      <p className="text-sm text-warm-gray">{item.date}</p>
+                      <p className="text-sm text-warm-gray">
+                        {item.completed && item.completedDate 
+                          ? `Completed ${item.completedDate}`
+                          : `Scheduled for ${item.date}`
+                        }
+                      </p>
                       <p className={`transition-colors duration-200 ${
-                        item.highlight 
-                          ? 'font-semibold text-charcoal' 
-                          : 'text-charcoal group-hover:text-verde'
+                        item.completed
+                          ? 'font-semibold text-green-600'
+                          : item.highlight 
+                            ? 'font-semibold text-charcoal' 
+                            : 'text-charcoal group-hover:text-verde'
                       }`}>
-                        {item.task}
+                        {item.completed && '✅ '}{item.task}
                       </p>
                     </div>
                   </div>

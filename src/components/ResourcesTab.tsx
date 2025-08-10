@@ -1,81 +1,106 @@
 'use client';
+import { useState, useEffect } from 'react';
 import { ResourceItem, GalleryStats } from '@/types/portal';
+import { supabase } from '@/lib/supabase';
 
-export default function ResourcesTab() {
+interface ResourcesTabProps {
+  sessionId: string;
+}
+
+export default function ResourcesTab({ sessionId }: ResourcesTabProps) {
+  const [resources, setResources] = useState<ResourceItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    loadSessionDocuments();
+  }, [sessionId]);
+
+  const loadSessionDocuments = async () => {
+    try {
+      console.log('Loading documents for session:', sessionId);
+      
+      const { data: documents, error } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('date', { ascending: true });
+
+      console.log('Documents query result:', { documents, error });
+
+      if (error) {
+        console.error('Error loading documents:', error);
+      } else if (documents) {
+        const formattedResources = documents.map((doc, index) => ({
+          id: doc.id,
+          title: doc.title,
+          description: doc.description,
+          type: doc.type,
+          status: doc.status,
+          icon: getIconForType(doc.type),
+          gradient: getGradientForType(doc.type),
+          actionText: getActionTextForType(doc.type),
+          date: doc.date
+        }));
+        setResources(formattedResources);
+      }
+    } catch (error) {
+      console.error('Error loading session documents:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getIconForType = (type: string) => {
+    const icons: Record<string, string> = {
+      'contract': '📄',
+      'invoice': '💰',
+      'guide': '👗',
+      'location': '📍',
+      'checklist': '✅',
+      'print': '🖼️'
+    };
+    return icons[type] || '📄';
+  };
+
+  const getGradientForType = (type: string) => {
+    const gradients: Record<string, string> = {
+      'contract': 'from-verde to-verde/80',
+      'invoice': 'from-gold to-gold/80',
+      'guide': 'from-charcoal to-charcoal/80',
+      'location': 'from-verde/80 to-verde/60',
+      'checklist': 'from-gold/80 to-gold/60',
+      'print': 'from-charcoal/80 to-charcoal/60'
+    };
+    return gradients[type] || 'from-charcoal to-charcoal/80';
+  };
+
+  const getActionTextForType = (type: string) => {
+    const actions: Record<string, string> = {
+      'contract': 'View PDF',
+      'invoice': 'Download',
+      'guide': 'View Guide',
+      'location': 'View Details',
+      'checklist': 'View Checklist',
+      'print': 'View Guide'
+    };
+    return actions[type] || 'View';
+  };
   const galleryStats: GalleryStats = {
     totalImages: 87,
     favorites: 12,
     accessDays: 365
   };
 
-  const resources: ResourceItem[] = [
-    {
-      id: '1',
-      title: 'Session Contract',
-      description: 'Signed agreement for your portrait session',
-      type: 'contract',
-      status: 'signed',
-      icon: '📄',
-      gradient: 'from-verde to-verde/80',
-      actionText: 'View PDF',
-      date: 'February 15, 2025'
-    },
-    {
-      id: '2',
-      title: 'Invoice',
-      description: 'Payment confirmation and receipt',
-      type: 'invoice',
-      status: 'paid',
-      icon: '💰',
-      gradient: 'from-gold to-gold/80',
-      actionText: 'Download',
-      date: 'February 16, 2025'
-    },
-    {
-      id: '3',
-      title: 'Style Guide',
-      description: 'Comprehensive wardrobe recommendations and styling tips',
-      type: 'guide',
-      status: 'new',
-      icon: '👗',
-      gradient: 'from-charcoal to-charcoal/80',
-      actionText: 'View Guide',
-      date: 'March 10, 2025'
-    },
-    {
-      id: '4',
-      title: 'Location Details',
-      description: 'Parking information and meeting points',
-      type: 'guide',
-      status: 'ready',
-      icon: '📍',
-      gradient: 'from-verde/80 to-verde/60',
-      actionText: 'View Details',
-      date: 'March 10, 2025'
-    },
-    {
-      id: '5',
-      title: 'Preparation Checklist',
-      description: 'Everything you need for session day',
-      type: 'guide',
-      status: 'ready',
-      icon: '✅',
-      gradient: 'from-gold/80 to-gold/60',
-      actionText: 'View Checklist',
-      date: 'March 10, 2025'
-    },
-    {
-      id: '6',
-      title: 'Print & Product Guide',
-      description: 'Professional printing recommendations',
-      type: 'guide',
-      status: 'ready',
-      icon: '🖼️',
-      gradient: 'from-charcoal/80 to-charcoal/60',
-      actionText: 'View Guide',
-      date: 'March 22, 2025'
-    }
-  ];
+  if (loading) {
+    return (
+      <div className="space-y-8 animate-fade-in">
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-gradient-to-r from-verde to-gold rounded-full mx-auto mb-4 animate-pulse"></div>
+          <p className="text-warm-gray">Loading your documents...</p>
+        </div>
+      </div>
+    );
+  }
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -141,7 +166,18 @@ export default function ResourcesTab() {
       <div>
         <h2 className="text-2xl font-didot mb-6 text-charcoal">Document Library</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {resources.map((resource, index) => (
+          {resources.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <div className="w-16 h-16 bg-ivory rounded-full mx-auto mb-4 flex items-center justify-center">
+                <span className="text-2xl">📄</span>
+              </div>
+              <h3 className="text-xl font-didot text-charcoal mb-2">No documents yet</h3>
+              <p className="text-warm-gray">
+                Your session documents will appear here once they're ready
+              </p>
+            </div>
+          ) : (
+            resources.map((resource, index) => (
             <div
               key={resource.id}
               onClick={() => handleResourceClick(resource)}
@@ -170,7 +206,8 @@ export default function ResourcesTab() {
                 </div>
               </div>
             </div>
-          ))}
+          ))
+          )}
         </div>
       </div>
     </div>

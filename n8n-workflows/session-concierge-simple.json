@@ -1,0 +1,119 @@
+{
+  "name": "Session Concierge Chat - Simple",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat-webhook",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook-start",
+      "name": "Chat Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.PORTAL_URL}}/api/n8n/chat-context?sessionId={{$json.sessionId}}",
+        "authentication": "genericCredential",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "get-context",
+      "name": "Get Session Context",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are the Session Concierge for Sean Evans Photography. You provide warm, personalized support for photography clients.\n\nClient Context:\n- Name: {{$json.context.client.fullName}}\n- Session: {{$json.context.session.title}} on {{$json.context.session.date}}\n- Phase: {{$json.context.session.phase}} ({{$json.context.session.daysUntilSession}} days away)\n- Progress: {{$json.context.session.progress.completedTasks}}/{{$json.context.session.progress.totalTasks}} tasks complete\n- Returning client: {{$json.context.client.isReturning}}\n\nRespond warmly and personally to: {{$('Chat Webhook').item.json.clientMessage}}\n\nKeep responses under 3 paragraphs. Be specific and actionable. Reference their session details when relevant.",
+        "model": "gpt-4"
+      },
+      "id": "openai-chat",
+      "name": "Generate AI Response",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.PORTAL_URL}}/api/n8n/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"sessionId\": \"{{$('Chat Webhook').item.json.sessionId}}\",\n  \"clientMessage\": \"{{$('Chat Webhook').item.json.clientMessage}}\",\n  \"aiResponse\": \"{{$json.text}}\",\n  \"metadata\": {\n    \"model\": \"gpt-4\",\n    \"context_used\": true\n  }\n}"
+      },
+      "id": "log-interaction",
+      "name": "Log Chat",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"response\": \"{{$('Generate AI Response').item.json.text}}\"\n}"
+      },
+      "id": "webhook-response",
+      "name": "Send Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 300]
+    }
+  ],
+  "connections": {
+    "Chat Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Session Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Session Context": {
+      "main": [
+        [
+          {
+            "node": "Generate AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate AI Response": {
+      "main": [
+        [
+          {
+            "node": "Log Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Chat": {
+      "main": [
+        [
+          {
+            "node": "Send Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-01-10T12:00:00.000Z"
+}

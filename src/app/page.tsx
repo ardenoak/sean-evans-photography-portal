@@ -2,14 +2,21 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Home() {
   const router = useRouter();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    // Redirect to a sample session portal
-    router.push('/portal/sarah-montgomery-2025');
-  }, [router]);
+    if (!loading) {
+      if (user) {
+        router.push('/dashboard');
+      } else {
+        router.push('/login');
+      }
+    }
+  }, [user, loading, router]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-ivory to-white flex items-center justify-center">

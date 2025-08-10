@@ -1,0 +1,326 @@
+{
+  "name": "Timeline Task Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 */15 * * * *"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Check Every 15 Minutes",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.PORTAL_URL}}/api/n8n/timeline",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "upcoming",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "get-pending-tasks",
+      "name": "Get Pending AI Tasks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$json.tasks.length}}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "id": "check-has-tasks",
+      "name": "Has Tasks to Process?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "split-tasks",
+      "name": "Process Each Task",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 1,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.taskName}}",
+              "operation": "contains",
+              "value2": "Style guide"
+            }
+          ]
+        }
+      },
+      "id": "route-style-guide",
+      "name": "Style Guide Task?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1120, 100]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.taskName}}",
+              "operation": "contains",
+              "value2": "email"
+            }
+          ]
+        }
+      },
+      "id": "route-email",
+      "name": "Email Task?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "messages": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are Sean Evans' AI assistant for creating personalized style guides for photography clients.\n\nCreate a comprehensive style guide for:\n- Client: {{$json.clientName}}\n- Session Type: {{$('Get Pending AI Tasks').item.json.sessionType}}\n- Session Date: {{$json.dueDate}}\n- Location: {{$('Get Session Data').item.json.location}}\n\nInclude:\n1. Wardrobe recommendations (colors, styles, fabrics)\n2. Hair & makeup suggestions\n3. What to avoid\n4. Props/accessories\n5. Timeline for preparation\n6. Sean's personal touch and expertise\n\nMake it warm, personal, and specific to their session type and location."
+            },
+            {
+              "role": "user",
+              "content": "Create a style guide for {{$json.clientName}}'s {{$('Get Session Data').item.json.sessionType}} session."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 800
+        }
+      },
+      "id": "generate-style-guide",
+      "name": "Generate Style Guide",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [1340, 100]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "messages": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are Sean Evans' AI assistant for creating personalized client emails.\n\nContext:\n- Client: {{$json.clientName}} \n- Session: {{$('Get Session Data').item.json.title}}\n- Date: {{$json.dueDate}}\n- Task: {{$json.taskName}}\n\nWrite a warm, professional email from Sean's perspective. Include:\n- Personal greeting using their first name\n- Reference to their specific session\n- Clear next steps or information\n- Sean's signature warmth and professionalism\n- Call to action if needed\n\nKeep it concise but personal. Sign as 'Sean Evans, Sean Evans Photography'"
+            },
+            {
+              "role": "user",
+              "content": "Create an email for the task: {{$json.taskName}}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 400
+        }
+      },
+      "id": "generate-email",
+      "name": "Generate Email",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.PORTAL_URL}}/api/n8n/timeline",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"taskId\": \"{{$json.id}}\",\n  \"aiContent\": \"{{$('Generate Style Guide').item.json.response}}\",\n  \"contentType\": \"style_guide\",\n  \"metadata\": {\n    \"client\": \"{{$json.clientName}}\",\n    \"sessionType\": \"{{$('Get Session Data').item.json.sessionType}}\",\n    \"generatedAt\": \"{{$now}}\"\n  }\n}",
+        "options": {}
+      },
+      "id": "submit-style-guide",
+      "name": "Submit Style Guide for Approval",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1560, 100]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.PORTAL_URL}}/api/n8n/timeline",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"taskId\": \"{{$json.id}}\",\n  \"aiContent\": \"{{$('Generate Email').item.json.response}}\",\n  \"contentType\": \"email\",\n  \"metadata\": {\n    \"subject\": \"Your {{$('Get Session Data').item.json.sessionType}} Session - {{$json.taskName}}\",\n    \"to\": \"{{$json.clientEmail}}\",\n    \"taskType\": \"{{$json.taskName}}\"\n  }\n}",
+        "options": {}
+      },
+      "id": "submit-email",
+      "name": "Submit Email for Approval",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.PORTAL_URL}}/api/n8n/sessions",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "sessionId",
+              "value": "={{$json.sessionId}}"
+            }
+          ]
+        }
+      },
+      "id": "get-session-data",
+      "name": "Get Session Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [900, 400]
+    }
+  ],
+  "connections": {
+    "Check Every 15 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Get Pending AI Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending AI Tasks": {
+      "main": [
+        [
+          {
+            "node": "Has Tasks to Process?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Tasks to Process?": {
+      "main": [
+        [
+          {
+            "node": "Process Each Task",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Session Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Process Each Task": {
+      "main": [
+        [
+          {
+            "node": "Style Guide Task?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Email Task?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Style Guide Task?": {
+      "main": [
+        [
+          {
+            "node": "Generate Style Guide",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Email Task?": {
+      "main": [
+        [
+          {
+            "node": "Generate Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Generate Style Guide": {
+      "main": [
+        [
+          {
+            "node": "Submit Style Guide for Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Email": {
+      "main": [
+        [
+          {
+            "node": "Submit Email for Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-01-10T12:00:00.000Z",
+      "updatedAt": "2025-01-10T12:00:00.000Z", 
+      "id": "1",
+      "name": "photography-portal"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-01-10T12:00:00.000Z",
+  "versionId": "1"
+}
