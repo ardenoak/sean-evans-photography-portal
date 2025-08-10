@@ -147,16 +147,16 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string): Promise<{ error?: any }> => {
     try {
       console.log('AdminAuth: Starting sign in process for:', email);
       
       // Add timeout wrapper to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => {
+      const timeoutPromise = new Promise<{ error: any }>((_, reject) => {
         setTimeout(() => reject(new Error('Sign in timeout after 15 seconds')), 15000);
       });
       
-      const signInPromise = (async () => {
+      const signInPromise = (async (): Promise<{ error?: any }> => {
         // Try to sign in first with shorter timeout
         console.log('AdminAuth: Attempting auth.signInWithPassword...');
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -189,7 +189,11 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       })();
 
       // Race between sign in and timeout
-      return await Promise.race([signInPromise, timeoutPromise]);
+      try {
+        return await Promise.race([signInPromise, timeoutPromise]);
+      } catch (timeoutError) {
+        return { error: timeoutError };
+      }
       
     } catch (error) {
       console.error('Admin sign in error:', error);
