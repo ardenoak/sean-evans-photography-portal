@@ -43,11 +43,15 @@ export default function AdminV2LoginPage() {
       
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className="text-center mb-12">
-          <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center mx-auto mb-6">
-            <span className="text-charcoal font-bold text-xl">SE</span>
+          <div className="flex items-center justify-center mx-auto mb-8">
+            <img
+              src="/sean-evans-logo.png"
+              alt="Sean Evans Photography"
+              className="h-20 w-auto brightness-0 invert"
+            />
           </div>
           <h1 className="text-3xl font-light text-ivory tracking-wide mb-2">Admin Portal</h1>
-          <p className="text-gold/80 text-sm font-light tracking-wider uppercase">Sean Evans Photography</p>
+          <p className="text-gold/80 text-sm font-light tracking-wider uppercase">Management Console</p>
         </div>
       </div>
 
