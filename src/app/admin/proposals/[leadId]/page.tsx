@@ -106,6 +106,7 @@ const packages: Package[] = [
     gallery: '20-30 Images',
     looks: '1',
     delivery: '14 Day Delivery',
+    turnaround: 'No sneak peek',
     highlights: [
       'Visual Themes: Identity, Stillness, Becoming',
       'Style: Clean, personal editorial energy',
@@ -359,10 +360,12 @@ export default function ProposalPage() {
                           <span>Delivery</span>
                           <span className="font-medium text-charcoal">{pkg.delivery}</span>
                         </div>
-                        <div className="flex justify-between py-3 border-b border-charcoal/10">
-                          <span>Sneak Peek</span>
-                          <span className="font-medium text-charcoal">{pkg.turnaround}</span>
-                        </div>
+                        {pkg.turnaround !== 'No sneak peek' && (
+                          <div className="flex justify-between py-3 border-b border-charcoal/10">
+                            <span>Sneak Peek</span>
+                            <span className="font-medium text-charcoal">{pkg.turnaround}</span>
+                          </div>
+                        )}
                         {pkg.fineArt && (
                           <div className="flex justify-between py-3">
                             <span>Fine Art Credit</span>
