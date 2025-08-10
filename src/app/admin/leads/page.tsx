@@ -29,6 +29,10 @@ interface Lead {
 
 export default function AdminLeadsPage() {
   const { user, loading: authLoading, isAdmin, signOut } = useAdminAuth();
+  
+  // Temporary bypass for development - remove this later
+  const isDev = process.env.NODE_ENV === 'development';
+  const tempBypass = isDev && true;
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
