@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 
@@ -102,12 +103,12 @@ export default function AdminLoginPage() {
 
           <div className="mt-6 pt-6 border-t border-warm-gray/20">
             <div className="text-center">
-              <a
+              <Link
                 href="/"
                 className="text-sm text-warm-gray hover:text-charcoal transition-colors"
               >
                 ← Back to Client Portal
-              </a>
+              </Link>
             </div>
           </div>
         </div>
