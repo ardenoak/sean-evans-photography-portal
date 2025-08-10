@@ -152,7 +152,7 @@ export default function AdminFormsPage() {
 
   const generateEmbedCode = () => {
     const baseUrl = window.location.origin;
-    return `<iframe src="${baseUrl}/forms/embed/${formConfig.id || 'preview'}" width="100%" height="800" frameborder="0" style="border: none; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);"></iframe>`;
+    return `<iframe src="${baseUrl}/forms/embed/${formConfig.id || 'preview'}" width="100%" height="700" frameborder="0" style="border: none; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 800px; margin: 0 auto; display: block;"></iframe>`;
   };
 
   const handleSignOut = async () => {
