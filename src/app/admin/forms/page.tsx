@@ -92,9 +92,6 @@ const defaultFormConfig: FormConfig = {
 
 export default function AdminFormsPage() {
   const { user, loading: authLoading, isAdmin, signOut } = useAdminAuth();
-  const [formConfig, setFormConfig] = useState<FormConfig>(defaultFormConfig);
-  const [previewMode, setPreviewMode] = useState(false);
-  const [activeTab, setActiveTab] = useState<'fields' | 'design' | 'settings' | 'embed'>('fields');
   const router = useRouter();
 
   useEffect(() => {
@@ -104,19 +101,24 @@ export default function AdminFormsPage() {
     }
   }, [user, isAdmin, authLoading, router]);
 
-  const addField = () => {
-    const newField: FormField = {
-      id: Date.now().toString(),
-      type: 'text',
-      label: 'New Field',
-      name: 'new_field',
-      required: false
-    };
-    setFormConfig({
-      ...formConfig,
-      fields: [...formConfig.fields, newField]
-    });
-  };
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-ivory to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-r from-gold to-verde rounded-full mx-auto mb-4 animate-pulse"></div>
+          <p className="text-warm-gray">Opening contact form...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return null;
+  }
+
+  // Redirect to new contact form
+  router.push('/contact');
+  return null;
 
   const updateField = (fieldId: string, updates: Partial<FormField>) => {
     setFormConfig({

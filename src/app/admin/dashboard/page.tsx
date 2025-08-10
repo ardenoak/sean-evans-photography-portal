@@ -200,12 +200,12 @@ export default function AdminDashboardPage() {
             </button>
 
             <button
-              onClick={() => router.push('/admin/forms')}
+              onClick={() => router.push('/contact')}
               className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-[1.02]"
             >
-              <div className="text-3xl mb-2">📝</div>
-              <div className="font-semibold">Form Builder</div>
-              <div className="text-sm opacity-90">Create embeddable forms</div>
+              <div className="text-3xl mb-2">📞</div>
+              <div className="font-semibold">Contact Form</div>
+              <div className="text-sm opacity-90">View live contact form</div>
             </button>
 
             <button
