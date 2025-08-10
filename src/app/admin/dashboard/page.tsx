@@ -218,6 +218,15 @@ export default function AdminDashboardPage() {
             </button>
 
             <button
+              onClick={() => router.push('/admin/calendar')}
+              className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white p-6 rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all duration-300 transform hover:scale-[1.02]"
+            >
+              <div className="text-3xl mb-2">📅</div>
+              <div className="font-semibold">Calendar</div>
+              <div className="text-sm opacity-90">View schedule and sync Google Calendar</div>
+            </button>
+
+            <button
               onClick={() => router.push('/admin/sessions')}
               className="bg-gradient-to-r from-gold to-gold/90 text-white p-6 rounded-lg hover:from-gold/90 hover:to-gold transition-all duration-300 transform hover:scale-[1.02]"
             >
@@ -236,6 +245,15 @@ export default function AdminDashboardPage() {
               <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse">
                 !
               </div>
+            </button>
+
+            <button
+              onClick={() => router.push('/admin/galleries')}
+              className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-[1.02]"
+            >
+              <div className="text-3xl mb-2">🖼️</div>
+              <div className="font-semibold">Gallery Management</div>
+              <div className="text-sm opacity-90">Upload and manage client galleries</div>
             </button>
 
             <button

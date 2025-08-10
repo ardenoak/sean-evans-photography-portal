@@ -206,7 +206,11 @@ export default function PortalClient({ sessionId }: PortalClientProps) {
       case 'resources':
         return <ResourcesTab sessionId={sessionId} />;
       case 'gallery':
-        return <GalleryTab />;
+        return <GalleryTab 
+          sessionId={sessionId}
+          sessionType={sessionData?.sessionType || ''}
+          sessionDate={sessionData?.date || ''}
+        />;
       default:
         return null;
     }
