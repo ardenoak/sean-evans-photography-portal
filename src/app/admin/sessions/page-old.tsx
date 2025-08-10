@@ -33,7 +33,7 @@ interface Client {
 }
 
 export default function AdminSessionsPage() {
-  const { user, loading: false, true, signOut } = useAdminAuth();
+  // Removed auth
   const [sessions, setSessions] = useState<Session[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -325,7 +325,7 @@ export default function AdminSessionsPage() {
               <span className="text-warm-gray text-sm hidden sm:inline">
                               </span>
               <button
-                onClick={handleSignOut}
+                onClick={
                 className="text-sm text-warm-gray hover:text-charcoal transition-colors"
               >
               </button>

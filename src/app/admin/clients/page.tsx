@@ -128,13 +128,7 @@ export default function AdminClientsPage() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-warm-gray text-sm hidden sm:inline">
-                              </span>
-              <button
-                onClick={handleSignOut}
-                className="text-sm text-warm-gray hover:text-charcoal transition-colors"
-              >
-              </button>
+              {/* Direct admin access - no auth needed */}
             </div>
           </div>
         </div>

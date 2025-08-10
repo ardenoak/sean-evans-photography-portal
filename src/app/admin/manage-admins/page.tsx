@@ -34,7 +34,7 @@ interface AdminInvitation {
 }
 
 export default function ManageAdminsPage() {
-  const { user, loading: false, true, isSuperAdmin, signOut } = useAdminAuth();
+  // Removed auth
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [invitations, setInvitations] = useState<AdminInvitation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -314,7 +314,7 @@ export default function ManageAdminsPage() {
             </div>
             <div className="flex items-center space-x-4">
               <button
-                onClick={handleSignOut}
+                onClick={
                 className="text-sm text-warm-gray hover:text-charcoal transition-colors"
               >
               </button>

@@ -46,7 +46,7 @@ interface TimelineItem {
 }
 
 export default function AdminSessionDetailPage() {
-  const { user, loading: false, true, signOut } = useAdminAuth();
+  // Removed auth
   const [session, setSession] = useState<SessionDetail | null>(null);
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -238,7 +238,7 @@ export default function AdminSessionDetailPage() {
               <span className="text-warm-gray text-sm hidden sm:inline">
                               </span>
               <button
-                onClick={handleSignOut}
+                onClick={
                 className="text-sm text-warm-gray hover:text-charcoal transition-colors"
               >
               </button>

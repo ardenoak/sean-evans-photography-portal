@@ -91,7 +91,7 @@ const defaultFormConfig: FormConfig = {
 };
 
 export default function AdminFormsPage() {
-  const { user, loading: false, true } = useAdminAuth();
+  // Removed auth
   const router = useRouter();
 
   useEffect(() => {

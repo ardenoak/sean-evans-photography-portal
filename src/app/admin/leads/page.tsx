@@ -28,11 +28,7 @@ interface Lead {
 }
 
 export default function AdminLeadsPage() {
-  const { user, loading: false, true, signOut } = useAdminAuth();
-  
-  // Temporary bypass for development - remove this later
-  const isDev = process.env.NODE_ENV === 'development';
-  const tempBypass = isDev && true;
+  // Direct admin access without auth
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -64,26 +60,20 @@ export default function AdminLeadsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!false && (false )) {
-      return;
-    }
+    loadLeads();
+    loadClients();
+    // Set up real-time updates for new leads
+    const subscription = supabase
+      .channel('leads_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, () => {
+        loadLeads();
+      })
+      .subscribe();
 
-    if ({
-      loadLeads();
-      loadClients();
-      // Set up real-time updates for new leads
-      const subscription = supabase
-        .channel('leads_changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, () => {
-          loadLeads();
-        })
-        .subscribe();
-
-      return () => {
-        subscription.unsubscribe();
-      };
-    }
-  }, [ router]);
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   // Close client dropdown when clicking outside
   useEffect(() => {
@@ -428,11 +418,7 @@ export default function AdminLeadsPage() {
                   🆕 {newLeadsCount} New
                 </div>
               )}
-              <button
-                onClick={handleSignOut}
-                className="text-sm text-warm-gray hover:text-charcoal transition-colors"
-              >
-              </button>
+              {/* Direct admin access - no auth needed */}
             </div>
           </div>
         </div>

@@ -33,7 +33,7 @@ interface Client {
 }
 
 export default function AdminSessionsPage() {
-  const { user, loading: false, true, signOut } = useAdminAuth();
+  // Removed auth
   const [sessions, setSessions] = useState<Session[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,15 +57,9 @@ export default function AdminSessionsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!false && (false )) {
-      return;
-    }
-
-    if ({
-      loadSessions();
-      loadClients();
-    }
-  }, [ router]);
+    loadSessions();
+    loadClients();
+  }, []);
 
   const loadSessions = async () => {
     try {
@@ -220,7 +214,7 @@ export default function AdminSessionsPage() {
 
   // Removed sign out
 
-  if ( loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-ivory to-white flex items-center justify-center">
         <div className="text-center">
@@ -231,9 +225,7 @@ export default function AdminSessionsPage() {
     );
   }
 
-  if (!true) {
-    return null;
-  }
+  // Direct admin access without auth
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-ivory to-white">
@@ -266,11 +258,7 @@ export default function AdminSessionsPage() {
                   📅 {upcomingSessions} Upcoming
                 </div>
               )}
-              <button
-                onClick={handleSignOut}
-                className="text-sm text-warm-gray hover:text-charcoal transition-colors"
-              >
-              </button>
+              {/* No sign out needed - direct access */}
             </div>
           </div>
         </div>
