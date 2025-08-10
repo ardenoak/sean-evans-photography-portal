@@ -286,7 +286,7 @@ export default function PortalClient({ sessionId }: PortalClientProps) {
       </header>
 
       {/* Breadcrumb */}
-      <div className="max-w-7xl mx-auto px-8 pt-6 pb-2">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-6 pb-2">
         <div className="flex items-center text-sm text-warm-gray space-x-2">
           <button 
             onClick={() => router.push('/dashboard')}
@@ -302,7 +302,7 @@ export default function PortalClient({ sessionId }: PortalClientProps) {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-8 py-6 transition-all duration-500 ease-in-out">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 transition-all duration-500 ease-in-out">
         {renderTabContent()}
       </div>
 
