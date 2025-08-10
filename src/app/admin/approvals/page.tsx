@@ -94,7 +94,7 @@ export default function AdminApprovalsPage() {
       if (approvalsError) {
         console.error('Error loading approvals:', approvalsError);
       } else if (approvalsData) {
-        const formattedApprovals = approvalsData.map(approval => ({
+        const formattedApprovals = approvalsData.map((approval: any) => ({
           approval_id: approval.id,
           ai_content_type: approval.ai_content_type,
           ai_generated_at: approval.ai_generated_at,
