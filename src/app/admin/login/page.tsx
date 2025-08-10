@@ -27,7 +27,7 @@ export default function AdminLoginPage() {
       });
       
       const signInPromise = signIn(email, password);
-      const result = await Promise.race([signInPromise, signInTimeout]);
+      const result = await Promise.race([signInPromise, signInTimeout]) as { error?: any };
 
       console.log('Sign in result:', { error: result.error });
 
