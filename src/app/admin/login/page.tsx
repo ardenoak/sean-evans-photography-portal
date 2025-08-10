@@ -19,9 +19,9 @@ export default function AdminLoginPage() {
     setError('');
 
     console.log('Attempting to sign in with:', email);
-    const { error, data } = await signIn(email, password);
+    const { error } = await signIn(email, password);
 
-    console.log('Sign in result:', { error, data });
+    console.log('Sign in result:', { error });
 
     if (error) {
       console.error('Sign in error:', error);
