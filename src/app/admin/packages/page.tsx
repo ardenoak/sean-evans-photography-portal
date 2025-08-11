@@ -18,6 +18,11 @@ interface CustomPackage {
   title: string;
   description: string;
   price: number;
+  original_price?: number;
+  discount_type?: 'percentage' | 'fixed' | null;
+  discount_value?: number;
+  discount_label?: string;
+  discount_expires_at?: string;
   sessions?: string;
   locations?: string;
   gallery?: string;
@@ -50,6 +55,11 @@ export default function PackagesPage() {
     title: '',
     description: '',
     price: '',
+    original_price: '',
+    discount_type: '' as '' | 'percentage' | 'fixed',
+    discount_value: '',
+    discount_label: 'Limited Time Offer',
+    discount_expires_at: '',
     sessions: '',
     locations: '',
     gallery: '',
@@ -110,6 +120,11 @@ export default function PackagesPage() {
       title: '',
       description: '',
       price: '',
+      original_price: '',
+      discount_type: '' as '' | 'percentage' | 'fixed',
+      discount_value: '',
+      discount_label: 'Limited Time Offer',
+      discount_expires_at: '',
       sessions: '',
       locations: '',
       gallery: '',
@@ -171,6 +186,11 @@ export default function PackagesPage() {
       const packageData = {
         ...newPackage,
         price: parseFloat(newPackage.price),
+        original_price: newPackage.original_price ? parseFloat(newPackage.original_price) : null,
+        discount_value: newPackage.discount_value ? parseFloat(newPackage.discount_value) : null,
+        discount_type: newPackage.discount_type || null,
+        discount_label: newPackage.discount_label || null,
+        discount_expires_at: newPackage.discount_expires_at || null,
         highlights: newPackage.highlights.filter(h => h.trim() !== ''),
         // Remove empty optional fields
         sessions: newPackage.sessions || null,
@@ -438,6 +458,80 @@ export default function PackagesPage() {
                         className="w-full px-4 py-3 border border-charcoal/20 bg-white text-charcoal font-light focus:border-charcoal/40 focus:outline-none transition-colors"
                       />
                     </div>
+                  </div>
+
+                  {/* Discount Section */}
+                  <div className="space-y-6 pt-6 border-t border-charcoal/10">
+                    <h3 className="text-lg font-light text-charcoal tracking-wide">Limited Time Offer (Optional)</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                      <div>
+                        <label className="block text-sm font-light text-charcoal/70 mb-2">Discount Type</label>
+                        <select
+                          value={newPackage.discount_type}
+                          onChange={(e) => handleInputChange('discount_type', e.target.value)}
+                          className="w-full px-4 py-3 border border-charcoal/20 bg-white text-charcoal font-light focus:border-charcoal/40 focus:outline-none transition-colors"
+                        >
+                          <option value="">No Discount</option>
+                          <option value="percentage">Percentage Off</option>
+                          <option value="fixed">Dollar Amount Off</option>
+                        </select>
+                      </div>
+
+                      {newPackage.discount_type && (
+                        <>
+                          <div>
+                            <label className="block text-sm font-light text-charcoal/70 mb-2">
+                              {newPackage.discount_type === 'percentage' ? 'Percentage (%)' : 'Amount ($)'}
+                            </label>
+                            <input
+                              type="number"
+                              value={newPackage.discount_value}
+                              onChange={(e) => handleInputChange('discount_value', e.target.value)}
+                              placeholder={newPackage.discount_type === 'percentage' ? '10' : '100.00'}
+                              step={newPackage.discount_type === 'percentage' ? '1' : '0.01'}
+                              min="0"
+                              max={newPackage.discount_type === 'percentage' ? '100' : undefined}
+                              className="w-full px-4 py-3 border border-charcoal/20 bg-white text-charcoal font-light focus:border-charcoal/40 focus:outline-none transition-colors"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-light text-charcoal/70 mb-2">Display Label</label>
+                            <input
+                              type="text"
+                              value={newPackage.discount_label}
+                              onChange={(e) => handleInputChange('discount_label', e.target.value)}
+                              placeholder="Limited Time Offer"
+                              className="w-full px-4 py-3 border border-charcoal/20 bg-white text-charcoal font-light focus:border-charcoal/40 focus:outline-none transition-colors"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-light text-charcoal/70 mb-2">Expires On</label>
+                            <input
+                              type="date"
+                              value={newPackage.discount_expires_at}
+                              onChange={(e) => handleInputChange('discount_expires_at', e.target.value)}
+                              className="w-full px-4 py-3 border border-charcoal/20 bg-white text-charcoal font-light focus:border-charcoal/40 focus:outline-none transition-colors"
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {newPackage.discount_type && newPackage.discount_value && (
+                      <div className="bg-verde/10 border border-verde/20 px-4 py-3 rounded">
+                        <p className="text-sm font-light text-charcoal/70">
+                          <strong>Preview:</strong> Client will see "{newPackage.discount_label}" with{' '}
+                          {newPackage.discount_type === 'percentage' 
+                            ? `${newPackage.discount_value}% off` 
+                            : `$${newPackage.discount_value} off`
+                          }{' '}
+                          {newPackage.discount_expires_at && `until ${new Date(newPackage.discount_expires_at).toLocaleDateString()}`}
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   <div>

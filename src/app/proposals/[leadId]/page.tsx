@@ -141,6 +141,7 @@ export default function ClientProposalPage() {
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
   const [selectedVideoAddOns, setSelectedVideoAddOns] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reserving, setReserving] = useState(false);
 
   useEffect(() => {
     const fetchLead = async () => {
@@ -206,6 +207,54 @@ export default function ClientProposalPage() {
       currency: 'USD',
       minimumFractionDigits: 0
     }).format(amount);
+  };
+
+  const handleReserveExperience = async () => {
+    if (!selectedPackage || !lead) {
+      alert('Please select a package first');
+      return;
+    }
+
+    setReserving(true);
+    try {
+      const totalAmount = calculateTotal();
+      const selectedPkg = packages.find(pkg => pkg.id === selectedPackage);
+
+      const quoteData = {
+        lead_id: leadId,
+        proposal_id: null, // We don't have a proposal_id from the hardcoded system
+        selected_package: selectedPkg?.name || selectedPackage,
+        selected_addons: selectedAddOns,
+        selected_video_addons: selectedVideoAddOns,
+        total_amount: totalAmount,
+        client_name: `${lead.first_name} ${lead.last_name}`,
+        client_email: lead.email
+      };
+
+      const response = await fetch('/api/quotes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(quoteData)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to generate quote');
+      }
+
+      // Open quote in new window
+      window.open(`/quote/${result.quote.id}`, '_blank');
+      
+      alert('Quote generated successfully! Check the new window to review your quote.');
+    } catch (error) {
+      console.error('Error generating quote:', error);
+      alert('Error generating quote. Please try again.');
+    } finally {
+      setReserving(false);
+    }
   };
 
   if (loading) {
@@ -564,8 +613,12 @@ export default function ClientProposalPage() {
               </div>
               
               <div className="flex flex-col md:flex-row gap-6 max-w-lg mx-auto">
-                <button className="flex-1 bg-charcoal text-white py-4 px-8 text-sm font-light tracking-wide uppercase hover:bg-charcoal/90 transition-all duration-300">
-                  Reserve Experience
+                <button 
+                  onClick={handleReserveExperience}
+                  disabled={!selectedPackage || reserving}
+                  className="flex-1 bg-charcoal text-white py-4 px-8 text-sm font-light tracking-wide uppercase hover:bg-charcoal/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {reserving ? 'Generating Quote...' : 'Reserve Experience'}
                 </button>
                 <button 
                   onClick={() => window.close()}
