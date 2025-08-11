@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 // Removed AdminAuth - direct access
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseAdmin } from '@/lib/supabase';
 
 interface Lead {
   id: string;
@@ -63,7 +63,7 @@ export default function AdminLeadsPage() {
     loadLeads();
     loadClients();
     // Set up real-time updates for new leads
-    const subscription = supabase
+    const subscription = supabaseAdmin
       .channel('leads_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, () => {
         loadLeads();
@@ -89,7 +89,7 @@ export default function AdminLeadsPage() {
 
   const loadLeads = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('leads')
         .select('*')
         .order('created_at', { ascending: false });
@@ -108,7 +108,7 @@ export default function AdminLeadsPage() {
 
   const loadClients = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('clients')
         .select('id, first_name, last_name, email')
         .order('first_name');
@@ -125,7 +125,7 @@ export default function AdminLeadsPage() {
 
   const markLeadAsViewed = async (leadId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('leads')
         .update({ 
           last_viewed_at: new Date().toISOString(),
@@ -145,7 +145,7 @@ export default function AdminLeadsPage() {
 
   const updateLeadStatus = async (leadId: string, newStatus: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('leads')
         .update({ status: newStatus, updated_at: new Date().toISOString() })
         .eq('id', leadId);
@@ -165,7 +165,7 @@ export default function AdminLeadsPage() {
     if (!editedLead || !selectedLead) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('leads')
         .update({
           status: editedLead.status,
@@ -201,7 +201,7 @@ export default function AdminLeadsPage() {
     }
 
     try {
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('leads')
         .delete()
         .eq('id', leadId);
@@ -292,7 +292,7 @@ export default function AdminLeadsPage() {
       
       console.log('Final lead data being inserted:', leadData);
 
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('leads')
         .insert([leadData])
         .select();

@@ -11,6 +11,10 @@ console.log('Supabase Config:', {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
+// Service role client for admin operations (bypasses RLS)
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+
 export type Database = {
   public: {
     Tables: {
