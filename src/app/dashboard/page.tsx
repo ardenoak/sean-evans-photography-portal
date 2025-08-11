@@ -42,7 +42,17 @@ export default function DashboardPage() {
     if (user) {
       loadUserData();
     }
-  }, [user, authLoading, router]);
+    
+    // Fallback timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      if (loading && !authLoading) {
+        console.warn('Client dashboard loading timeout, forcing completion');
+        setLoading(false);
+      }
+    }, 10000); // 10 second timeout
+
+    return () => clearTimeout(timeout);
+  }, [user, authLoading, router, loading]);
 
   const loadUserData = async () => {
     if (!user) return;
@@ -50,67 +60,84 @@ export default function DashboardPage() {
     try {
       console.log('Loading profile for user:', user.id);
       
-      // Load client profile
-      const { data: profileData, error: profileError } = await supabase
-        .from('clients')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+      // Load client profile (handle table might not exist)
+      let profileData = null;
+      try {
+        const result = await supabase
+          .from('clients')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
 
-      console.log('Profile query result:', { profileData, profileError });
+        console.log('Profile query result:', result);
 
-      if (profileError) {
-        console.error('Error loading profile:', profileError);
-        
-        // If no profile exists, create one from user metadata using upsert
-        if (profileError.code === 'PGRST116') {
-          console.log('No profile found, creating one with upsert...');
-          const { data: newProfile, error: createError } = await supabase
-            .from('clients')
-            .upsert({
+        if (result.error) {
+          if (result.error.code === 'PGRST116') {
+            // No profile found, create a basic one
+            console.log('No profile found, creating basic profile...');
+            profileData = {
+              id: user.id,
               user_id: user.id,
               email: user.email || '',
               first_name: user.user_metadata?.first_name || 'User',
               last_name: user.user_metadata?.last_name || '',
-            }, {
-              onConflict: 'user_id',
-              ignoreDuplicates: false
-            })
-            .select()
-            .single();
-            
-          if (createError) {
-            console.error('Error creating/updating profile:', createError);
+            };
           } else {
-            console.log('Profile created/updated:', newProfile);
-            setProfile(newProfile);
+            console.warn('Profile query error:', result.error);
           }
+        } else {
+          profileData = result.data;
         }
-      } else {
-        setProfile(profileData);
+      } catch (e) {
+        console.warn('Clients table not available, using user data:', e);
+        // Create a basic profile from user data
+        profileData = {
+          id: user.id,
+          user_id: user.id,
+          email: user.email || '',
+          first_name: user.user_metadata?.first_name || 'User',
+          last_name: user.user_metadata?.last_name || '',
+        };
       }
 
-      // Load client sessions
       if (profileData) {
-        console.log('Loading sessions for client_id:', profileData.id);
-        
-        const { data: sessionsData, error: sessionsError } = await supabase
-          .from('sessions')
-          .select('*')
-          .eq('client_id', profileData.id)
-          .order('session_date', { ascending: false });
+        setProfile(profileData);
 
-        console.log('Sessions query result:', { sessionsData, sessionsError });
+        // Load client sessions (handle table might not exist)
+        try {
+          console.log('Loading sessions for client_id:', profileData.id);
+          
+          const { data: sessionsData, error: sessionsError } = await supabase
+            .from('sessions')
+            .select('*')
+            .eq('client_id', profileData.id)
+            .order('session_date', { ascending: false });
 
-        if (sessionsError) {
-          console.error('Error loading sessions:', sessionsError);
-        } else {
-          console.log('Setting sessions:', sessionsData);
-          setSessions(sessionsData || []);
+          console.log('Sessions query result:', { sessionsData, sessionsError });
+
+          if (sessionsError) {
+            console.warn('Error loading sessions:', sessionsError);
+            setSessions([]); // Set empty sessions if table doesn't exist
+          } else {
+            console.log('Setting sessions:', sessionsData);
+            setSessions(sessionsData || []);
+          }
+        } catch (e) {
+          console.warn('Sessions table not available:', e);
+          setSessions([]); // Set empty sessions if table doesn't exist
         }
       }
     } catch (error) {
       console.error('Error loading user data:', error);
+      // Create a fallback profile even if everything fails
+      setProfile({
+        id: user.id,
+        user_id: user.id,
+        email: user.email || '',
+        first_name: user.user_metadata?.first_name || 'User',
+        last_name: user.user_metadata?.last_name || '',
+      });
+      setSessions([]);
     } finally {
       setLoading(false);
     }

@@ -22,40 +22,77 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     loadDashboardStats();
-  }, []);
+    
+    // Fallback timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      if (loading) {
+        console.warn('Dashboard loading timeout, forcing completion');
+        setLoading(false);
+      }
+    }, 10000); // 10 second timeout
+
+    return () => clearTimeout(timeout);
+  }, [loading]);
 
   const loadDashboardStats = async () => {
     try {
-      // Load total clients
-      const { count: clientCount } = await supabase
-        .from('clients')
-        .select('*', { count: 'exact', head: true });
+      // Load total clients (handle table might not exist)
+      let clientCount = 0;
+      try {
+        const clientResult = await supabase
+          .from('clients')
+          .select('*', { count: 'exact', head: true });
+        clientCount = clientResult.count || 0;
+      } catch (e) {
+        console.warn('Clients table not available:', e);
+      }
 
-      // Load total sessions
-      const { count: sessionCount } = await supabase
-        .from('sessions')
-        .select('*', { count: 'exact', head: true });
+      // Load total sessions (handle table might not exist)
+      let sessionCount = 0;
+      let upcomingCount = 0;
+      try {
+        const sessionResult = await supabase
+          .from('sessions')
+          .select('*', { count: 'exact', head: true });
+        sessionCount = sessionResult.count || 0;
 
-      // Load total leads
-      const { count: leadCount } = await supabase
-        .from('leads')
-        .select('*', { count: 'exact', head: true });
+        // Load upcoming sessions (sessions in the future)
+        const today = new Date().toISOString().split('T')[0];
+        const upcomingResult = await supabase
+          .from('sessions')
+          .select('*', { count: 'exact', head: true })
+          .gte('session_date', today);
+        upcomingCount = upcomingResult.count || 0;
+      } catch (e) {
+        console.warn('Sessions table not available:', e);
+      }
 
-      // Load upcoming sessions (sessions in the future)
-      const today = new Date().toISOString().split('T')[0];
-      const { count: upcomingCount } = await supabase
-        .from('sessions')
-        .select('*', { count: 'exact', head: true })
-        .gte('session_date', today);
+      // Load total leads (this table should exist)
+      let leadCount = 0;
+      try {
+        const leadResult = await supabase
+          .from('leads')
+          .select('*', { count: 'exact', head: true });
+        leadCount = leadResult.count || 0;
+      } catch (e) {
+        console.warn('Leads table not available:', e);
+      }
 
       setStats({
-        totalClients: clientCount || 0,
-        totalSessions: sessionCount || 0,
-        totalLeads: leadCount || 0,
-        upcomingSessions: upcomingCount || 0
+        totalClients: clientCount,
+        totalSessions: sessionCount,
+        totalLeads: leadCount,
+        upcomingSessions: upcomingCount
       });
     } catch (error) {
       console.error('Error loading dashboard stats:', error);
+      // Still set default stats even if there's an error
+      setStats({
+        totalClients: 0,
+        totalSessions: 0,
+        totalLeads: 0,
+        upcomingSessions: 0
+      });
     } finally {
       setLoading(false);
     }
