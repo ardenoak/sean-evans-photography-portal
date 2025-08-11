@@ -11,9 +11,15 @@ console.log('Supabase Config:', {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// Service role client for admin operations (bypasses RLS)
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+// Service role client for server-side admin operations only (bypasses RLS)
+// Note: Only use this in API routes, never in client components
+export const getSupabaseAdmin = () => {
+  if (typeof window !== 'undefined') {
+    throw new Error('supabaseAdmin should only be used on server side')
+  }
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+  return createClient(supabaseUrl, supabaseServiceKey)
+}
 
 export type Database = {
   public: {

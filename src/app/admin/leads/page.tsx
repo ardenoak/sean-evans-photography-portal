@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 // Removed AdminAuth - direct access
-import { supabase, supabaseAdmin } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 interface Lead {
   id: string;
@@ -63,7 +63,7 @@ export default function AdminLeadsPage() {
     loadLeads();
     loadClients();
     // Set up real-time updates for new leads
-    const subscription = supabaseAdmin
+    const subscription = supabase
       .channel('leads_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, () => {
         loadLeads();
@@ -89,15 +89,13 @@ export default function AdminLeadsPage() {
 
   const loadLeads = async () => {
     try {
-      const { data, error } = await supabaseAdmin
-        .from('leads')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const response = await fetch('/api/admin/leads');
+      const result = await response.json();
 
-      if (error) {
-        console.error('Error loading leads:', error);
+      if (!response.ok) {
+        console.error('Error loading leads:', result.error);
       } else {
-        setLeads(data || []);
+        setLeads(result.data || []);
       }
     } catch (error) {
       console.error('Error loading leads:', error);
@@ -108,7 +106,7 @@ export default function AdminLeadsPage() {
 
   const loadClients = async () => {
     try {
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await supabase
         .from('clients')
         .select('id, first_name, last_name, email')
         .order('first_name');
@@ -125,7 +123,7 @@ export default function AdminLeadsPage() {
 
   const markLeadAsViewed = async (leadId: string) => {
     try {
-      const { error } = await supabaseAdmin
+      const { error } = await supabase
         .from('leads')
         .update({ 
           last_viewed_at: new Date().toISOString(),
@@ -145,7 +143,7 @@ export default function AdminLeadsPage() {
 
   const updateLeadStatus = async (leadId: string, newStatus: string) => {
     try {
-      const { error } = await supabaseAdmin
+      const { error } = await supabase
         .from('leads')
         .update({ status: newStatus, updated_at: new Date().toISOString() })
         .eq('id', leadId);
@@ -165,7 +163,7 @@ export default function AdminLeadsPage() {
     if (!editedLead || !selectedLead) return;
 
     try {
-      const { error } = await supabaseAdmin
+      const { error } = await supabase
         .from('leads')
         .update({
           status: editedLead.status,
@@ -201,7 +199,7 @@ export default function AdminLeadsPage() {
     }
 
     try {
-      const { error } = await supabaseAdmin
+      const { error } = await supabase
         .from('leads')
         .delete()
         .eq('id', leadId);
@@ -292,16 +290,20 @@ export default function AdminLeadsPage() {
       
       console.log('Final lead data being inserted:', leadData);
 
-      const { data, error } = await supabaseAdmin
-        .from('leads')
-        .insert([leadData])
-        .select();
+      const response = await fetch('/api/admin/leads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(leadData),
+      });
 
-      console.log('Insert result:', { data, error });
+      const result = await response.json();
+      console.log('API result:', result);
 
-      if (error) {
-        console.error('Error creating lead:', error);
-        alert(`Error creating lead: ${error.message}`);
+      if (!response.ok) {
+        console.error('Error creating lead:', result.error);
+        alert(`Error creating lead: ${result.error}`);
       } else {
         setShowCreateModal(false);
         setNewLead({
