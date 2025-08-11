@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# scripts with potential secrets
+*-packages.js
+test-*.js
+run-migrations.js
+create-essential-tables.js
