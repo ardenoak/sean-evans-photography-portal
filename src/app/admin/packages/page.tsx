@@ -48,6 +48,7 @@ export default function PackagesPage() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingPackage, setEditingPackage] = useState<CustomPackage | null>(null);
   const [saving, setSaving] = useState(false);
   const [newPackage, setNewPackage] = useState({
     category_id: '',
@@ -175,6 +176,96 @@ export default function PackagesPage() {
     }
   };
 
+  const copyPackage = (pkg: CustomPackage) => {
+    // Pre-fill form with package data for copying
+    setNewPackage({
+      category_id: pkg.category_id,
+      name: `${pkg.name} Copy`,
+      title: `${pkg.title} (Copy)`,
+      description: pkg.description,
+      price: pkg.price.toString(),
+      original_price: pkg.original_price?.toString() || '',
+      discount_type: pkg.discount_type || '',
+      discount_value: pkg.discount_value?.toString() || '',
+      discount_label: pkg.discount_label || 'Limited Time Offer',
+      discount_expires_at: pkg.discount_expires_at || '',
+      sessions: pkg.sessions || '',
+      locations: pkg.locations || '',
+      gallery: pkg.gallery || '',
+      looks: pkg.looks || '',
+      delivery: pkg.delivery || '',
+      video: pkg.video || '',
+      turnaround: pkg.turnaround || '',
+      fine_art: pkg.fine_art || '',
+      highlights: pkg.highlights.length > 0 ? [...pkg.highlights] : [''],
+      investment_note: pkg.investment_note || '',
+      theme_keywords: pkg.theme_keywords || '',
+      image_url: pkg.image_url || '',
+      is_main_offer: false, // Always false for copies
+      is_active: true
+    });
+    setEditingPackage(null);
+    setShowCreateModal(true);
+  };
+
+  const editPackage = (pkg: CustomPackage) => {
+    // Pre-fill form with package data for editing
+    setNewPackage({
+      category_id: pkg.category_id,
+      name: pkg.name,
+      title: pkg.title,
+      description: pkg.description,
+      price: pkg.price.toString(),
+      original_price: pkg.original_price?.toString() || '',
+      discount_type: pkg.discount_type || '',
+      discount_value: pkg.discount_value?.toString() || '',
+      discount_label: pkg.discount_label || 'Limited Time Offer',
+      discount_expires_at: pkg.discount_expires_at || '',
+      sessions: pkg.sessions || '',
+      locations: pkg.locations || '',
+      gallery: pkg.gallery || '',
+      looks: pkg.looks || '',
+      delivery: pkg.delivery || '',
+      video: pkg.video || '',
+      turnaround: pkg.turnaround || '',
+      fine_art: pkg.fine_art || '',
+      highlights: pkg.highlights.length > 0 ? [...pkg.highlights] : [''],
+      investment_note: pkg.investment_note || '',
+      theme_keywords: pkg.theme_keywords || '',
+      image_url: pkg.image_url || '',
+      is_main_offer: pkg.is_main_offer || false,
+      is_active: pkg.is_active
+    });
+    setEditingPackage(pkg);
+    setShowCreateModal(true);
+  };
+
+  const deletePackage = async (pkg: CustomPackage) => {
+    if (!confirm(`Are you sure you want to delete "${pkg.title}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/packages', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ id: pkg.id })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete package');
+      }
+
+      // Reload data
+      await loadData();
+    } catch (error) {
+      console.error('Error deleting package:', error);
+      alert('Error deleting package. Please try again.');
+    }
+  };
+
   const savePackage = async () => {
     if (!newPackage.category_id || !newPackage.name || !newPackage.title || !newPackage.price) {
       alert('Please fill in all required fields');
@@ -206,25 +297,35 @@ export default function PackagesPage() {
         image_url: newPackage.image_url || null
       };
 
-      const response = await fetch('/api/admin/packages', {
-        method: 'POST',
+      const isEditing = editingPackage !== null;
+      const url = '/api/admin/packages';
+      const method = isEditing ? 'PUT' : 'POST';
+      
+      let requestBody: any = packageData;
+      if (isEditing) {
+        requestBody = { ...packageData, id: editingPackage.id };
+      }
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(packageData)
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create package');
+        throw new Error(`Failed to ${isEditing ? 'update' : 'create'} package`);
       }
 
       // Reload data and close modal
       await loadData();
       setShowCreateModal(false);
+      setEditingPackage(null);
       resetForm();
     } catch (error) {
       console.error('Error saving package:', error);
-      alert('Error creating package. Please try again.');
+      alert(`Error ${editingPackage ? 'updating' : 'creating'} package. Please try again.`);
     } finally {
       setSaving(false);
     }
@@ -333,12 +434,29 @@ export default function PackagesPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button className="p-2 hover:bg-charcoal/5 rounded transition-colors">
+                      <button 
+                        onClick={() => copyPackage(pkg)}
+                        className="p-2 hover:bg-verde/10 rounded transition-colors group"
+                        title="Copy Package"
+                      >
+                        <svg className="w-5 h-5 text-charcoal/60 group-hover:text-verde" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                      </button>
+                      <button 
+                        onClick={() => editPackage(pkg)}
+                        className="p-2 hover:bg-charcoal/5 rounded transition-colors"
+                        title="Edit Package"
+                      >
                         <svg className="w-5 h-5 text-charcoal/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                         </svg>
                       </button>
-                      <button className="p-2 hover:bg-red-50 rounded transition-colors">
+                      <button 
+                        onClick={() => deletePackage(pkg)}
+                        className="p-2 hover:bg-red-50 rounded transition-colors"
+                        title="Delete Package"
+                      >
                         <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
@@ -408,10 +526,13 @@ export default function PackagesPage() {
           <div className="bg-white max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-8">
               <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-light text-charcoal">Create New Package</h2>
+                <h2 className="text-2xl font-light text-charcoal">
+                  {editingPackage ? 'Edit Package' : 'Create New Package'}
+                </h2>
                 <button 
                   onClick={() => {
                     setShowCreateModal(false);
+                    setEditingPackage(null);
                     resetForm();
                   }}
                   className="text-charcoal/60 hover:text-charcoal"
@@ -768,6 +889,7 @@ export default function PackagesPage() {
                     type="button"
                     onClick={() => {
                       setShowCreateModal(false);
+                      setEditingPackage(null);
                       resetForm();
                     }}
                     className="px-6 py-3 border border-charcoal/30 text-charcoal font-light tracking-wide uppercase hover:bg-charcoal hover:text-white transition-all duration-300"
@@ -783,7 +905,10 @@ export default function PackagesPage() {
                         : 'bg-charcoal text-white hover:bg-charcoal/90'
                     }`}
                   >
-                    {saving ? 'Creating...' : 'Create Package'}
+                    {saving 
+                      ? (editingPackage ? 'Updating...' : 'Creating...')
+                      : (editingPackage ? 'Update Package' : 'Create Package')
+                    }
                   </button>
                 </div>
               </form>
