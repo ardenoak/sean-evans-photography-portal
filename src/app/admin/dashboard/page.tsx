@@ -137,7 +137,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-8 mb-16">
         <button
           onClick={() => router.push('/admin/leads')}
           className="block group text-left"
@@ -151,6 +151,22 @@ export default function AdminDashboardPage() {
             <h3 className="text-xl font-light text-charcoal tracking-wide mb-3">Lead Management</h3>
             <div className="w-12 h-px bg-gold/30 mb-4"></div>
             <p className="text-charcoal/70 text-sm font-light leading-relaxed">Curate inquiries, craft personalized proposals, and nurture client relationships.</p>
+          </div>
+        </button>
+
+        <button
+          onClick={() => router.push('/admin/packages')}
+          className="block group text-left"
+        >
+          <div className="bg-ivory/40 border border-gold/20 p-8 group-hover:bg-ivory/60 transition-all duration-300 transform hover:scale-[1.02]">
+            <div className="flex items-center justify-between mb-6">
+              <div className="w-12 h-12 bg-charcoal/20 flex items-center justify-center group-hover:bg-charcoal/30 transition-colors duration-300">
+                <span className="text-ivory font-light text-lg">◉</span>
+              </div>
+            </div>
+            <h3 className="text-xl font-light text-charcoal tracking-wide mb-3">Package Studio</h3>
+            <div className="w-12 h-px bg-charcoal/30 mb-4"></div>
+            <p className="text-charcoal/70 text-sm font-light leading-relaxed">Design custom packages and services for bespoke proposal creation.</p>
           </div>
         </button>
 

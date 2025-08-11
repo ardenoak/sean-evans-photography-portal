@@ -155,34 +155,23 @@ export default function ProposalPage() {
       console.log('Fetching lead with ID:', leadId);
 
       try {
-        // First check if we can connect to the leads table
-        const { data: allLeads, error: allLeadsError } = await supabase
-          .from('leads')
-          .select('id, first_name, last_name')
-          .limit(5);
+        // Fetch the lead using the admin API route
+        const response = await fetch(`/api/admin/leads/${leadId}`);
+        const result = await response.json();
 
-        console.log('All leads sample:', allLeads, 'Error:', allLeadsError);
+        console.log('API response:', { status: response.status, result });
 
-        // Now fetch the specific lead
-        const { data, error } = await supabase
-          .from('leads')
-          .select('*')
-          .eq('id', leadId)
-          .single();
-
-        console.log('Lead query result:', { data, error, leadId });
-
-        if (error) {
-          console.error('Error fetching lead:', error);
-          if (error.code === 'PGRST116') {
+        if (!response.ok) {
+          console.error('Error fetching lead:', result.error);
+          if (response.status === 404) {
             console.log('Lead not found in database');
           }
           return;
         }
 
-        if (data) {
-          console.log('Lead found:', data);
-          setLead(data);
+        if (result.data) {
+          console.log('Lead found:', result.data);
+          setLead(result.data);
         } else {
           console.log('No data returned for lead');
         }

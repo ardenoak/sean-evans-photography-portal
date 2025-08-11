@@ -57,6 +57,8 @@ export default function AdminLeadsPage() {
   const [isExistingClient, setIsExistingClient] = useState(false);
   const [clientSearchQuery, setClientSearchQuery] = useState('');
   const [showClientDropdown, setShowClientDropdown] = useState(false);
+  const [leadProposals, setLeadProposals] = useState<any[]>([]);
+  const [proposalsLoading, setProposalsLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -118,6 +120,24 @@ export default function AdminLeadsPage() {
       }
     } catch (error) {
       console.error('Error loading clients:', error);
+    }
+  };
+
+  const loadLeadProposals = async (leadId: string) => {
+    setProposalsLoading(true);
+    try {
+      const response = await fetch(`/api/admin/proposals?leadId=${leadId}`);
+      const result = await response.json();
+      
+      if (!response.ok) {
+        console.error('Error loading proposals:', result.error);
+      } else {
+        setLeadProposals(result.data || []);
+      }
+    } catch (error) {
+      console.error('Error loading proposals:', error);
+    } finally {
+      setProposalsLoading(false);
     }
   };
 
@@ -218,14 +238,14 @@ export default function AdminLeadsPage() {
 
   const getStatusColor = (status: string) => {
     const colors = {
-      'new': 'bg-verde text-white',
-      'contacted': 'bg-gold text-white',
-      'qualified': 'bg-purple-500 text-white',
-      'proposal_sent': 'bg-orange-500 text-white',
-      'converted': 'bg-green-500 text-white',
-      'lost': 'bg-red-500 text-white'
+      'new': 'bg-charcoal text-ivory',
+      'contacted': 'bg-charcoal/70 text-ivory',
+      'qualified': 'bg-charcoal/60 text-ivory',
+      'proposal_sent': 'bg-charcoal/50 text-ivory',
+      'converted': 'bg-charcoal/40 text-ivory',
+      'lost': 'bg-charcoal/80 text-ivory'
     };
-    return colors[status as keyof typeof colors] || 'bg-warm-gray text-white';
+    return colors[status as keyof typeof colors] || 'bg-charcoal/30 text-ivory';
   };
 
 
@@ -390,173 +410,201 @@ export default function AdminLeadsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-ivory to-white">
-      {/* Compact Header */}
-      <header className="bg-white shadow-lg">
-        <div className="max-w-none mx-auto px-6 py-3">
+    <div className="min-h-screen bg-ivory">
+      {/* Elegant Header - Matching Proposal Aesthetic */}
+      <div className="relative bg-ivory border-b border-charcoal/10">
+        <div className="absolute inset-0 bg-gradient-to-b from-ivory via-ivory/95 to-warm-gray/5"></div>
+        
+        <div className="relative z-10 max-w-6xl mx-auto px-6 py-8">
           <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-6">
               <button
                 onClick={() => router.push('/admin/dashboard')}
-                className="text-warm-gray hover:text-charcoal transition-colors"
+                className="text-charcoal/60 hover:text-charcoal transition-colors text-lg"
               >
                 ←
               </button>
-              <Image
-                src="/sean-evans-logo.png"
-                alt="Sean Evans Photography"
-                width={200}
-                height={80}
-                className="h-8 w-auto"
-                priority
-              />
-              <div>
-                <h1 className="text-lg font-didot text-charcoal">Leads</h1>
+              <div className="flex items-center space-x-6">
+                <Image 
+                  src="/sean-evans-logo.png" 
+                  alt="Sean Evans Photography" 
+                  width={180} 
+                  height={60}
+                  className="opacity-90"
+                />
+                <div className="border-l border-charcoal/20 pl-6">
+                  <h1 className="text-3xl font-light text-charcoal tracking-wide">Lead Management</h1>
+                  <div className="w-12 h-px bg-charcoal/30 mt-2"></div>
+                </div>
               </div>
             </div>
+            
             <div className="flex items-center space-x-4">
               {newLeadsCount > 0 && (
-                <div className="bg-verde text-white px-3 py-1 rounded-full text-sm font-semibold animate-pulse">
-                  🆕 {newLeadsCount} New
+                <div className="bg-charcoal text-ivory px-4 py-2 text-sm font-light tracking-wide animate-pulse">
+                  {newLeadsCount} New Lead{newLeadsCount !== 1 ? 's' : ''}
                 </div>
               )}
-              {/* Direct admin access - no auth needed */}
             </div>
           </div>
         </div>
-      </header>
+      </div>
 
-      <div className="max-w-none mx-auto px-6 py-4">
-        {/* Compact Stats */}
-        <div className="grid grid-cols-4 gap-3 mb-4">
-          <div className="bg-white rounded-lg shadow p-3 text-center">
-            <div className="text-lg font-bold text-charcoal">{leads.length}</div>
-            <div className="text-xs text-warm-gray">Total</div>
+      {/* Elegant Analytics Section */}
+      <div className="max-w-6xl mx-auto px-6 py-12">
+        <div className="text-center mb-16">
+          <h2 className="text-2xl font-light text-charcoal tracking-wide mb-4">Overview</h2>
+          <div className="w-16 h-px bg-charcoal/20 mx-auto"></div>
+        </div>
+
+        {/* Elegant Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+          <div className="bg-white border border-charcoal/10 p-8 text-center">
+            <div className="text-4xl font-light text-charcoal mb-2">{leads.length}</div>
+            <div className="text-sm font-light text-charcoal/60 tracking-wide uppercase">Total Leads</div>
           </div>
-          <div className="bg-white rounded-lg shadow p-3 text-center">
-            <div className="text-lg font-bold text-verde">{statusCounts.new || 0}</div>
-            <div className="text-xs text-warm-gray">New</div>
+          <div className="bg-white border border-charcoal/10 p-8 text-center">
+            <div className="text-4xl font-light text-charcoal mb-2">{statusCounts.new || 0}</div>
+            <div className="text-sm font-light text-charcoal/60 tracking-wide uppercase">New</div>
           </div>
-          <div className="bg-white rounded-lg shadow p-3 text-center">
-            <div className="text-lg font-bold text-purple-600">{statusCounts.qualified || 0}</div>
-            <div className="text-xs text-warm-gray">Qualified</div>
+          <div className="bg-white border border-charcoal/10 p-8 text-center">
+            <div className="text-4xl font-light text-charcoal mb-2">{statusCounts.qualified || 0}</div>
+            <div className="text-sm font-light text-charcoal/60 tracking-wide uppercase">Qualified</div>
           </div>
-          <div className="bg-white rounded-lg shadow p-3 text-center">
-            <div className="text-lg font-bold text-green-600">{statusCounts.converted || 0}</div>
-            <div className="text-xs text-warm-gray">Converted</div>
+          <div className="bg-white border border-charcoal/10 p-8 text-center">
+            <div className="text-4xl font-light text-charcoal mb-2">{statusCounts.converted || 0}</div>
+            <div className="text-sm font-light text-charcoal/60 tracking-wide uppercase">Converted</div>
           </div>
         </div>
 
-        {/* Compact Filters */}
-        <div className="bg-white rounded-lg shadow p-4 mb-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-3 py-2 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold text-sm"
-            >
-              <option value="all">All Status</option>
-              <option value="new">New</option>
-              <option value="contacted">Contacted</option>
-              <option value="qualified">Qualified</option>
-              <option value="proposal_sent">Proposal Sent</option>
-              <option value="converted">Converted</option>
-              <option value="lost">Lost</option>
-            </select>
-            
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search leads..."
-              className="flex-1 px-3 py-2 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold text-sm"
-            />
+        {/* Refined Filters */}
+        <div className="bg-white border border-charcoal/10 p-8 mb-12">
+          <div className="flex flex-col lg:flex-row gap-6 items-center justify-between">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="px-4 py-3 border border-charcoal/20 text-sm font-light focus:outline-none focus:border-charcoal transition-colors"
+              >
+                <option value="all">All Status</option>
+                <option value="new">New</option>
+                <option value="contacted">Contacted</option>
+                <option value="qualified">Qualified</option>
+                <option value="proposal_sent">Proposal Sent</option>
+                <option value="converted">Converted</option>
+                <option value="lost">Lost</option>
+              </select>
+              
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search leads..."
+                className="px-4 py-3 border border-charcoal/20 text-sm font-light focus:outline-none focus:border-charcoal transition-colors min-w-64"
+              />
+            </div>
             
             <button
               onClick={() => setShowCreateModal(true)}
-              className="bg-gold text-white px-4 py-2 rounded-lg hover:bg-gold/90 transition-colors text-sm font-medium"
+              className="bg-charcoal text-white px-8 py-3 text-sm font-light tracking-wide uppercase hover:bg-charcoal/90 transition-all duration-300"
             >
-              + Add Lead
+              Add New Lead
             </button>
           </div>
         </div>
 
-        {/* Compact Leads List */}
-        <div className="bg-white rounded-lg shadow">
+        {/* Elegant Leads List */}
+        <div className="space-y-6">
+          <div className="text-center mb-8">
+            <h3 className="text-xl font-light text-charcoal tracking-wide mb-4">Client Leads</h3>
+            <div className="w-12 h-px bg-charcoal/20 mx-auto"></div>
+          </div>
+
           {filteredLeads.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-warm-gray">No leads found</p>
+            <div className="bg-white border border-charcoal/10 p-16 text-center">
+              <div className="text-charcoal/60 text-lg font-light mb-4">No leads found</div>
+              <div className="text-charcoal/40 text-sm">Try adjusting your search criteria</div>
             </div>
           ) : (
-            <div className="divide-y divide-warm-gray/20">
+            <div className="space-y-4">
               {filteredLeads.map((lead) => (
                 <div
                   key={lead.id}
-                  className={`p-4 hover:bg-ivory/30 cursor-pointer transition-colors relative ${
-                    isNewLead(lead) ? 'bg-green-50 border-l-4 border-l-verde' : ''
+                  className={`bg-white border border-charcoal/10 hover:border-charcoal/30 cursor-pointer transition-all duration-300 relative ${
+                    isNewLead(lead) ? 'border-l-4 border-l-verde bg-verde/5' : ''
                   }`}
                   onClick={() => {
                     setSelectedLead(lead);
                     setEditedLead(lead);
                     setHasUnsavedChanges(false);
+                    setLeadProposals([]);
+                    loadLeadProposals(lead.id);
                     if (isNewLead(lead)) {
                       markLeadAsViewed(lead.id);
                     }
                   }}
                 >
-                  {/* New Lead Indicator */}
-                  {isNewLead(lead) && (
-                    <div className="absolute top-2 right-2">
-                      <div className="w-3 h-3 bg-verde rounded-full animate-pulse"></div>
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center space-x-2">
-                          <p className="text-sm font-semibold text-charcoal truncate">
+                  <div className="p-6">
+                    {/* New Lead Indicator */}
+                    {isNewLead(lead) && (
+                      <div className="absolute top-3 right-3">
+                        <div className="bg-verde text-white px-3 py-1 text-xs font-medium tracking-wide shadow-sm">
+                          NEW
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="mb-3">
+                          <h4 className="text-lg font-light text-charcoal tracking-wide mb-1">
                             {lead.first_name} {lead.last_name}
-                          </p>
-                          {isNewLead(lead) && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-verde text-white">
-                              NEW
-                            </span>
+                          </h4>
+                          <div className="text-charcoal/60 font-light text-sm">{lead.email}</div>
+                          {lead.phone && (
+                            <div className="text-charcoal/60 font-light text-xs">{lead.phone}</div>
                           )}
                         </div>
-                        <p className="text-xs text-warm-gray truncate">{lead.email}</p>
-                        <div className="flex items-center space-x-3 mt-1">
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                           {lead.session_type_interest && (
-                            <span className="text-xs text-charcoal bg-ivory/50 px-2 py-0.5 rounded">
-                              {lead.session_type_interest}
-                            </span>
+                            <div>
+                              <div className="text-charcoal/60 text-xs uppercase tracking-wide mb-1">Session Type</div>
+                              <div className="text-charcoal font-light text-sm">{lead.session_type_interest}</div>
+                            </div>
                           )}
                           {lead.budget_range && (
-                            <span className="text-xs text-charcoal bg-gold/20 px-2 py-0.5 rounded">
-                              {lead.budget_range}
-                            </span>
+                            <div>
+                              <div className="text-charcoal/60 text-xs uppercase tracking-wide mb-1">Budget</div>
+                              <div className="text-charcoal font-light text-sm">{lead.budget_range}</div>
+                            </div>
                           )}
+                          {lead.preferred_timeline && (
+                            <div>
+                              <div className="text-charcoal/60 text-xs uppercase tracking-wide mb-1">Timeline</div>
+                              <div className="text-charcoal font-light text-sm">{lead.preferred_timeline}</div>
+                            </div>
+                          )}
+                        </div>
+
+                        {lead.message && (
+                          <div className="border-l-2 border-charcoal/20 pl-3 italic text-charcoal/70 font-light text-sm">
+                            "{lead.message.substring(0, 120)}..."
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="ml-6 text-right space-y-2">
+                        <div className="text-charcoal/60 text-xs uppercase tracking-wide">Status</div>
+                        <div className={`px-3 py-1.5 text-xs font-light tracking-wide ${getStatusColor(lead.status)}`}>
+                          {lead.status === 'new' ? 'NEW' : lead.status.toUpperCase().replace('_', ' ')}
+                        </div>
+                        <div className="text-charcoal/60 text-xs font-light">
+                          {formatDate(lead.created_at)}
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(lead.status)}`}>
-                        {lead.status === 'new' ? 'NEW' : lead.status.toUpperCase().replace('_', ' ')}
-                      </span>
-                      <span className="text-xs text-warm-gray">
-                        {formatDate(lead.created_at)}
-                      </span>
-                    </div>
                   </div>
-
-                  {lead.message && (
-                    <div className="mt-2">
-                      <p className="text-xs text-warm-gray line-clamp-1 italic">
-                        "{lead.message.substring(0, 100)}..."
-                      </p>
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
@@ -564,84 +612,95 @@ export default function AdminLeadsPage() {
         </div>
       </div>
 
-      {/* Lead Detail Modal */}
+      {/* Lead Detail Modal - Updated Design */}
       {selectedLead && editedLead && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="p-6 border-b border-warm-gray/20 bg-gradient-to-r from-ivory to-white">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <h3 className="text-xl font-didot text-charcoal">
-                        {selectedLead.first_name} {selectedLead.last_name}
-                      </h3>
-                      {isNewLead(selectedLead) && (
-                        <span className="inline-flex items-center px-2 py-1 rounded text-sm font-medium bg-verde text-white animate-pulse">
-                          NEW LEAD
-                        </span>
-                      )}
-                    </div>
-                    <div className="space-y-1 mt-2">
-                      <div className="flex items-center space-x-2">
-                        <p className="text-warm-gray">{selectedLead.email}</p>
-                        <button
-                          onClick={() => navigator.clipboard.writeText(selectedLead.email)}
-                          className="text-xs text-gold hover:text-gold/80 transition-colors"
-                          title="Copy email"
-                        >
-                          📋
-                        </button>
+          <div className="bg-white border border-charcoal/10 shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Elegant Header */}
+            <div className="relative bg-ivory border-b border-charcoal/10">
+              <div className="absolute inset-0 bg-gradient-to-b from-ivory via-ivory/95 to-warm-gray/5"></div>
+              
+              <div className="relative z-10 p-8">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-6">
+                    <div>
+                      <div className="flex items-center space-x-3 mb-2">
+                        <h3 className="text-2xl font-light text-charcoal tracking-wide">
+                          {selectedLead.first_name} {selectedLead.last_name}
+                        </h3>
+                        {isNewLead(selectedLead) && (
+                          <span className="bg-verde text-white px-3 py-1 text-xs font-medium tracking-wide shadow-sm">
+                            NEW
+                          </span>
+                        )}
                       </div>
-                      {selectedLead.phone && (
+                      <div className="w-12 h-px bg-charcoal/30 mb-3"></div>
+                      
+                      <div className="space-y-1">
                         <div className="flex items-center space-x-2">
-                          <p className="text-warm-gray text-sm">{selectedLead.phone}</p>
+                          <p className="text-charcoal/70 font-light">{selectedLead.email}</p>
                           <button
-                            onClick={() => navigator.clipboard.writeText(selectedLead.phone || '')}
-                            className="text-xs text-gold hover:text-gold/80 transition-colors"
-                            title="Copy phone"
+                            onClick={() => navigator.clipboard.writeText(selectedLead.email)}
+                            className="text-xs text-charcoal/50 hover:text-charcoal transition-colors"
+                            title="Copy email"
                           >
                             📋
                           </button>
                         </div>
-                      )}
+                        {selectedLead.phone && (
+                          <div className="flex items-center space-x-2">
+                            <p className="text-charcoal/70 font-light text-sm">{selectedLead.phone}</p>
+                            <button
+                              onClick={() => navigator.clipboard.writeText(selectedLead.phone || '')}
+                              className="text-xs text-charcoal/50 hover:text-charcoal transition-colors"
+                              title="Copy phone"
+                            >
+                              📋
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  {hasUnsavedChanges && (
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
-                      <span className="text-sm text-orange-600 font-medium">Unsaved changes</span>
-                    </div>
-                  )}
-                  <button
-                    onClick={() => {
-                      setSelectedLead(null);
-                      setEditedLead(null);
-                      setHasUnsavedChanges(false);
-                    }}
-                    className="text-warm-gray hover:text-charcoal transition-colors p-2 hover:bg-gray-50 rounded-lg"
-                  >
-                    <span className="text-xl">×</span>
-                  </button>
+                  
+                  <div className="flex items-center space-x-4">
+                    {hasUnsavedChanges && (
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-verde rounded-full animate-pulse"></div>
+                        <span className="text-sm text-charcoal/70 font-light">Unsaved changes</span>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => {
+                        setSelectedLead(null);
+                        setEditedLead(null);
+                        setHasUnsavedChanges(false);
+                      }}
+                      className="text-charcoal/60 hover:text-charcoal transition-colors p-2 hover:bg-white/50"
+                    >
+                      <span className="text-xl">×</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="p-8">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Lead Details - Left Column */}
-                <div className="lg:col-span-2 space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="text-center mb-6">
+                    <h4 className="text-lg font-light text-charcoal tracking-wide mb-2">Lead Details</h4>
+                    <div className="w-12 h-px bg-charcoal/20 mx-auto"></div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6">
                     <div>
-                      <p className="text-sm text-warm-gray mb-1">Status</p>
+                      <p className="text-charcoal/60 text-xs uppercase tracking-wide mb-2">Status</p>
                       <select
                         value={editedLead.status}
                         onChange={(e) => handleLeadChange('status', e.target.value)}
-                        className={`w-full px-3 py-2 text-sm rounded-lg border border-warm-gray/30 font-medium focus:ring-2 focus:ring-gold ${getStatusColor(editedLead.status)}`}
+                        className={`w-full px-4 py-3 border border-charcoal/20 font-light focus:outline-none focus:border-charcoal transition-colors ${getStatusColor(editedLead.status)}`}
                       >
                         <option value="new">New</option>
                         <option value="contacted">Contacted</option>
@@ -652,65 +711,76 @@ export default function AdminLeadsPage() {
                       </select>
                     </div>
                     
-                    {selectedLead.session_type_interest && (
-                      <div>
-                        <p className="text-sm text-warm-gray mb-1">Session Interest</p>
-                        <p className="text-charcoal bg-ivory/30 px-3 py-2 rounded-lg text-sm">{selectedLead.session_type_interest}</p>
-                      </div>
-                    )}
+                    <div>
+                      <p className="text-charcoal/60 text-xs uppercase tracking-wide mb-2">Session Type</p>
+                      <select
+                        value={editedLead.session_type_interest || ''}
+                        onChange={(e) => handleLeadChange('session_type_interest', e.target.value)}
+                        className="w-full px-4 py-3 border border-charcoal/20 bg-white font-light focus:outline-none focus:border-charcoal transition-colors"
+                      >
+                        <option value="">Select session type...</option>
+                        <option value="Portraiture Session">Portraiture Session</option>
+                        <option value="Branding Session">Branding Session</option>
+                        <option value="Editorial Session">Editorial Session</option>
+                        <option value="Commercial Session">Commercial Session</option>
+                        <option value="Fashion Session">Fashion Session</option>
+                        <option value="Headshot Session">Headshot Session</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-6">
                     {selectedLead.budget_range && (
                       <div>
-                        <p className="text-sm text-warm-gray mb-1">Budget Range</p>
-                        <p className="text-charcoal bg-gold/10 px-3 py-2 rounded-lg text-sm">{selectedLead.budget_range}</p>
+                        <p className="text-charcoal/60 text-xs uppercase tracking-wide mb-2">Budget Range</p>
+                        <div className="bg-ivory/50 border border-charcoal/10 px-4 py-3 text-charcoal font-light">{selectedLead.budget_range}</div>
                       </div>
                     )}
                     
                     {selectedLead.lead_source && (
                       <div>
-                        <p className="text-sm text-warm-gray mb-1">Lead Source</p>
-                        <p className="text-charcoal bg-verde/10 px-3 py-2 rounded-lg text-sm">{selectedLead.lead_source}</p>
+                        <p className="text-charcoal/60 text-xs uppercase tracking-wide mb-2">Lead Source</p>
+                        <div className="bg-ivory/50 border border-charcoal/10 px-4 py-3 text-charcoal font-light">{selectedLead.lead_source}</div>
                       </div>
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-6">
                     {selectedLead.preferred_timeline && (
                       <div>
-                        <p className="text-sm text-warm-gray mb-1">Timeline</p>
-                        <p className="text-charcoal bg-blue-50 px-3 py-2 rounded-lg text-sm">{selectedLead.preferred_timeline}</p>
+                        <p className="text-charcoal/60 text-xs uppercase tracking-wide mb-2">Timeline</p>
+                        <div className="bg-ivory/50 border border-charcoal/10 px-4 py-3 text-charcoal font-light">{selectedLead.preferred_timeline}</div>
                       </div>
                     )}
                     
                     {selectedLead.preferred_time && (
                       <div>
-                        <p className="text-sm text-warm-gray mb-1">Preferred Time</p>
-                        <p className="text-charcoal bg-purple-50 px-3 py-2 rounded-lg text-sm">{selectedLead.preferred_time}</p>
+                        <p className="text-charcoal/60 text-xs uppercase tracking-wide mb-2">Preferred Time</p>
+                        <div className="bg-ivory/50 border border-charcoal/10 px-4 py-3 text-charcoal font-light">{selectedLead.preferred_time}</div>
                       </div>
                     )}
                   </div>
 
                   {selectedLead.preferred_session_date && (
                     <div>
-                      <p className="text-sm text-warm-gray mb-1">Preferred Session Date</p>
-                      <p className="text-charcoal bg-green-50 px-3 py-2 rounded-lg text-sm">
-                        📅 {new Date(selectedLead.preferred_session_date).toLocaleDateString('en-US', { 
+                      <p className="text-charcoal/60 text-xs uppercase tracking-wide mb-2">Preferred Session Date</p>
+                      <div className="bg-ivory/50 border border-charcoal/10 px-4 py-3 text-charcoal font-light">
+                        {new Date(selectedLead.preferred_session_date).toLocaleDateString('en-US', { 
                           weekday: 'long', 
                           year: 'numeric', 
                           month: 'long', 
                           day: 'numeric' 
                         })}
-                      </p>
+                      </div>
                     </div>
                   )}
 
                   {selectedLead.message && (
                     <div>
-                      <p className="text-sm text-warm-gray mb-2">Initial Message</p>
-                      <div className="bg-ivory/50 rounded-lg p-4 border-l-4 border-gold">
-                        <p className="text-charcoal italic">"{selectedLead.message}"</p>
+                      <p className="text-charcoal/60 text-xs uppercase tracking-wide mb-2">Initial Message</p>
+                      <div className="bg-ivory/30 border border-charcoal/10 p-4 border-l-4 border-l-charcoal">
+                        <p className="text-charcoal font-light italic">"{selectedLead.message}"</p>
                       </div>
                     </div>
                   )}
@@ -718,28 +788,123 @@ export default function AdminLeadsPage() {
 
                 {/* Notes Section - Right Column */}
                 <div className="lg:col-span-1">
-                  <div className="bg-gray-50 rounded-lg p-4 h-full">
-                    <label className="block text-sm font-medium text-charcoal mb-2">
-                      📝 Internal Notes
-                    </label>
+                  <div className="bg-ivory/30 border border-charcoal/10 p-6 h-full">
+                    <div className="text-center mb-4">
+                      <h4 className="text-lg font-light text-charcoal tracking-wide mb-2">Internal Notes</h4>
+                      <div className="w-8 h-px bg-charcoal/20 mx-auto"></div>
+                    </div>
+                    
                     <textarea
                       value={editedLead.notes || ''}
                       onChange={(e) => handleLeadChange('notes', e.target.value)}
                       placeholder="Add your notes about this lead..."
                       rows={12}
-                      className="w-full px-3 py-2 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent resize-none text-sm"
+                      className="w-full px-4 py-3 border border-charcoal/20 bg-white font-light focus:outline-none focus:border-charcoal transition-colors resize-none text-sm"
                     />
-                    <p className="text-xs text-warm-gray mt-1">
-                      These notes are private and only visible to admins
+                    <p className="text-xs text-charcoal/60 font-light mt-2">
+                      Private notes visible only to administrators
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Footer */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0 pt-6 mt-6 border-t border-warm-gray/20">
-                <div className="text-sm text-warm-gray">
-                  <p>Created: {formatDate(selectedLead.created_at)} ({isNewLead(selectedLead) ? 'NEW' : 'Viewed'})</p>
+              {/* Proposals Section */}
+              <div className="mt-8 pt-8 border-t border-charcoal/10">
+                <div className="text-center mb-6">
+                  <h4 className="text-lg font-light text-charcoal tracking-wide mb-2">Proposals</h4>
+                  <div className="w-12 h-px bg-charcoal/20 mx-auto"></div>
+                </div>
+
+                {proposalsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="text-charcoal/60 font-light">Loading proposals...</div>
+                  </div>
+                ) : leadProposals.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="space-y-4">
+                      <div className="text-charcoal/60 font-light">No proposals created yet</div>
+                      <button 
+                        onClick={() => router.push(`/admin/proposals/create/${selectedLead.id}`)}
+                        className="px-6 py-3 bg-charcoal text-white font-light tracking-wide uppercase hover:bg-charcoal/90 transition-all duration-300"
+                      >
+                        Create First Proposal
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {leadProposals.map((proposal: any) => {
+                      const formatCurrency = (amount: number) => {
+                        return new Intl.NumberFormat('en-US', {
+                          style: 'currency',
+                          currency: 'USD',
+                          minimumFractionDigits: 0
+                        }).format(amount);
+                      };
+
+                      const getStatusColor = (status: string) => {
+                        switch (status) {
+                          case 'draft': return 'text-charcoal/60 bg-charcoal/10';
+                          case 'sent': return 'text-blue-600 bg-blue-100';
+                          case 'accepted': return 'text-verde bg-verde/20';
+                          case 'rejected': return 'text-red-600 bg-red-100';
+                          default: return 'text-charcoal/60 bg-charcoal/10';
+                        }
+                      };
+
+                      return (
+                        <div key={proposal.id} className="border border-charcoal/20 bg-white hover:shadow-sm transition-shadow duration-300">
+                          <div className="p-6">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <h5 className="font-light text-charcoal">{proposal.title}</h5>
+                                  <span className={`px-3 py-1 text-xs uppercase tracking-wide font-medium ${getStatusColor(proposal.status)}`}>
+                                    {proposal.status}
+                                  </span>
+                                </div>
+                                <div className="text-sm text-charcoal/70 font-light mb-3">
+                                  Total: {formatCurrency(proposal.total_amount)}
+                                </div>
+                                {proposal.custom_message && (
+                                  <p className="text-sm text-charcoal/80 font-light mb-3 line-clamp-2">
+                                    {proposal.custom_message}
+                                  </p>
+                                )}
+                                <div className="flex items-center gap-4 text-xs text-charcoal/60">
+                                  <span>Created: {new Date(proposal.created_at).toLocaleDateString()}</span>
+                                  {proposal.sent_at && (
+                                    <span>Sent: {new Date(proposal.sent_at).toLocaleDateString()}</span>
+                                  )}
+                                  <span>{proposal.proposal_packages?.length || 0} packages</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 ml-4">
+                                <button
+                                  onClick={() => window.open(`/proposals/${selectedLead.id}`, '_blank')}
+                                  className="px-4 py-2 text-xs border border-charcoal/30 text-charcoal hover:bg-charcoal hover:text-white transition-all duration-300 uppercase tracking-wide font-light"
+                                >
+                                  Preview
+                                </button>
+                                {proposal.status === 'draft' && (
+                                  <button className="px-4 py-2 text-xs bg-charcoal text-white hover:bg-charcoal/90 transition-all duration-300 uppercase tracking-wide font-light">
+                                    Send
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Elegant Footer */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0 pt-8 mt-8 border-t border-charcoal/10">
+                <div className="text-sm text-charcoal/60 font-light space-y-1">
+                  <p>Created: {formatDate(selectedLead.created_at)} {isNewLead(selectedLead) ? '(New)' : '(Viewed)'}</p>
                   <p>Updated: {formatDate(selectedLead.updated_at)}</p>
                   {selectedLead.last_viewed_at && (
                     <p>Last Viewed: {formatDate(selectedLead.last_viewed_at)}</p>
@@ -749,7 +914,7 @@ export default function AdminLeadsPage() {
                 <div className="flex items-center space-x-3">
                   <button
                     onClick={() => setShowDeleteConfirm(true)}
-                    className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors text-sm font-medium flex items-center space-x-2"
+                    className="border border-charcoal/30 text-charcoal px-4 py-2 text-sm font-light tracking-wide uppercase hover:border-red-500 hover:text-red-500 transition-all duration-300 flex items-center space-x-2"
                   >
                     <span>🗑️</span>
                     <span>Delete</span>
@@ -758,7 +923,7 @@ export default function AdminLeadsPage() {
                   {hasUnsavedChanges && (
                     <button
                       onClick={saveLeadChanges}
-                      className="bg-gold text-white px-6 py-2 rounded-lg hover:bg-gold/90 transition-colors text-sm font-medium flex items-center space-x-2"
+                      className="bg-verde text-white px-6 py-2 text-sm font-light tracking-wide uppercase hover:bg-verde/90 transition-all duration-300 flex items-center space-x-2"
                     >
                       <span>💾</span>
                       <span>Save Changes</span>
@@ -766,14 +931,14 @@ export default function AdminLeadsPage() {
                   )}
                   
                   <button 
-                    onClick={() => router.push(`/admin/proposals/${selectedLead.id}`)}
-                    className="bg-gold text-white px-4 py-2 rounded-lg hover:bg-gold/90 transition-colors text-sm font-medium flex items-center space-x-2"
+                    onClick={() => router.push(`/admin/proposals/create/${selectedLead.id}`)}
+                    className="bg-charcoal text-white px-6 py-2 text-sm font-light tracking-wide uppercase hover:bg-charcoal/90 transition-all duration-300 flex items-center space-x-2"
                   >
                     <span>📋</span>
-                    <span>Generate Proposal</span>
+                    <span>Create Proposal</span>
                   </button>
                   
-                  <button className="bg-verde text-white px-4 py-2 rounded-lg hover:bg-verde/90 transition-colors text-sm">
+                  <button className="border border-charcoal/30 text-charcoal px-4 py-2 text-sm font-light tracking-wide uppercase hover:border-charcoal hover:bg-charcoal hover:text-white transition-all duration-300">
                     Convert to Session
                   </button>
                 </div>
