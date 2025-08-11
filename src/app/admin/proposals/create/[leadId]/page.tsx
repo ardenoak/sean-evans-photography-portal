@@ -96,28 +96,46 @@ export default function CreateProposalPage() {
       setLead(leadData);
       setProposalTitle(`Custom Proposal - ${leadData.first_name} ${leadData.last_name}`);
 
-      // Load categories
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .from('package_categories')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order');
+      // Load categories (handle table might not exist)
+      try {
+        const { data: categoriesData, error: categoriesError } = await supabase
+          .from('package_categories')
+          .select('*')
+          .eq('is_active', true)
+          .order('display_order');
 
-      if (categoriesError) throw categoriesError;
-      setCategories(categoriesData || []);
+        if (categoriesError) {
+          console.warn('Categories table not available:', categoriesError);
+          setCategories([]);
+        } else {
+          setCategories(categoriesData || []);
+        }
+      } catch (e) {
+        console.warn('Categories table not accessible:', e);
+        setCategories([]);
+      }
 
-      // Load packages
-      const { data: packagesData, error: packagesError } = await supabase
-        .from('custom_packages')
-        .select(`
-          *,
-          category:package_categories(*)
-        `)
-        .eq('is_active', true)
-        .order('created_at');
+      // Load packages (handle table might not exist)
+      try {
+        const { data: packagesData, error: packagesError } = await supabase
+          .from('custom_packages')
+          .select(`
+            *,
+            category:package_categories(*)
+          `)
+          .eq('is_active', true)
+          .order('created_at');
 
-      if (packagesError) throw packagesError;
-      setPackages(packagesData || []);
+        if (packagesError) {
+          console.warn('Packages table not available:', packagesError);
+          setPackages([]);
+        } else {
+          setPackages(packagesData || []);
+        }
+      } catch (e) {
+        console.warn('Packages table not accessible:', e);
+        setPackages([]);
+      }
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -232,6 +250,46 @@ export default function CreateProposalPage() {
           >
             Back to Leads
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  // If no packages are available, show setup message
+  if (packages.length === 0 || categories.length === 0) {
+    return (
+      <div className="min-h-screen bg-ivory flex items-center justify-center">
+        <div className="text-center max-w-2xl mx-auto px-6">
+          <div className="text-charcoal text-xl mb-4">Database Setup Required</div>
+          <p className="text-charcoal/70 mb-6">
+            The proposal system requires database tables to be created. Please run the migration scripts in your Supabase dashboard.
+          </p>
+          <div className="space-y-4">
+            <div className="bg-white border border-charcoal/20 p-6 rounded-lg text-left">
+              <h3 className="font-medium text-charcoal mb-2">Setup Instructions:</h3>
+              <ol className="list-decimal list-inside space-y-2 text-sm text-charcoal/70">
+                <li>Go to <a href="https://supabase.com/dashboard/project/gapqnyahyskjjznyocrn/sql/new" target="_blank" className="text-blue-600 underline">Supabase SQL Editor</a></li>
+                <li>Copy and paste contents of <code>scripts/create-proposal-system.sql</code></li>
+                <li>Click "Run" to create the tables</li>
+                <li>Copy and paste contents of <code>scripts/add-discount-fields.sql</code></li>
+                <li>Click "Run" to add discount functionality</li>
+              </ol>
+            </div>
+            <div className="flex space-x-4 justify-center">
+              <button 
+                onClick={() => router.push('/admin/leads')}
+                className="px-6 py-3 bg-charcoal text-white font-light tracking-wide uppercase hover:bg-charcoal/90 transition-all duration-300"
+              >
+                Back to Leads
+              </button>
+              <button 
+                onClick={() => router.push('/admin/db-status')}
+                className="px-6 py-3 border border-charcoal/30 text-charcoal font-light tracking-wide uppercase hover:bg-charcoal hover:text-white transition-all duration-300"
+              >
+                Check Database Status
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
