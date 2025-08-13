@@ -607,7 +607,7 @@ export default function PackagesPage() {
       // Only manage proposal_packages for new proposals (not when editing)
       if (!editingExperience) {
         // Add all components to proposal_packages
-        const proposalPackages = [];
+        const proposalPackages: any[] = [];
         
         // Add all selected packages
         selectedPackages.forEach(pkg => {
