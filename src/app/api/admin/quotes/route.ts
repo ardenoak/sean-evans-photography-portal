@@ -25,7 +25,7 @@ export async function GET() {
   } catch (error) {
     console.error('Quotes API error:', error);
     // If quotes table doesn't exist yet, return empty array
-    if (error.message?.includes('relation "quotes" does not exist')) {
+    if ((error as any).message?.includes('relation "quotes" does not exist')) {
       console.log('Quotes table not yet created, returning empty array');
       return NextResponse.json({ data: [] });
     }
