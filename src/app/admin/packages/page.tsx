@@ -984,7 +984,7 @@ export default function PackagesPage() {
               </div>
             ) : (
               <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {experiences.filter(exp => exp.status === 'template' || (exp.status === 'draft' && !exp.lead_id)).map((experience) => (
+                {experiences.filter(exp => exp.status === 'template' || (exp.status === 'draft' && !(exp as any).lead_id)).map((experience) => (
                   <div key={experience.id} className="border border-charcoal/20 bg-white hover:shadow-2xl transition-all duration-500 overflow-hidden group">
                     {/* Experience Card Header with image or gradient */}
                     <div className="relative h-48 overflow-hidden">
