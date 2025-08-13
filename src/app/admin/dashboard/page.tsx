@@ -166,7 +166,7 @@ export default function AdminDashboardPage() {
           console.log('Payments API response:', paymentsResult);
           if (paymentsResult.data && Array.isArray(paymentsResult.data)) {
             // Count only pending payments
-            pendingPaymentCount = paymentsResult.data.filter(payment => payment.status === 'pending').length;
+            pendingPaymentCount = paymentsResult.data.filter((payment: any) => payment.status === 'pending').length;
             console.log('Processed payments:', { totalPayments: paymentsResult.data.length, pendingPaymentCount });
           }
         }
