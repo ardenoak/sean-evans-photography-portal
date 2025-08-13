@@ -950,7 +950,7 @@ export default function PackagesPage() {
           console.log('🎯 Experiences state:', experiences);
           const standardExperiences = experiences.filter(exp => 
             exp.status === 'template' || 
-            (exp.status === 'draft' && !exp.lead_id) ||
+            (exp.status === 'draft' && !(exp as any).lead_id) ||
             (exp.status === 'draft' && exp.title?.toLowerCase().includes('standard'))
           );
           console.log('🎯 Standard experiences:', standardExperiences);
