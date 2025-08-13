@@ -25,7 +25,7 @@ export async function GET() {
   } catch (error) {
     console.error('Contracts API error:', error);
     // If contracts table doesn't exist yet, return empty array
-    if (error.message?.includes('relation "contracts" does not exist')) {
+    if ((error as any).message?.includes('relation "contracts" does not exist')) {
       console.log('Contracts table not yet created, returning empty array');
       return NextResponse.json({ data: [] });
     }
