@@ -799,7 +799,7 @@ function ExperienceProposalView({ experienceData, lead, leadId }: { experienceDa
     
     // Add selected enhancements (required + optional selected)
     if (experienceData.enhancements) {
-      experienceData.enhancements.forEach(enhancement => {
+      experienceData.enhancements.forEach((enhancement: any) => {
         if (enhancement.is_required || selectedEnhancements.includes(enhancement.id)) {
           total += enhancement.price;
         }
@@ -808,7 +808,7 @@ function ExperienceProposalView({ experienceData, lead, leadId }: { experienceDa
     
     // Add selected motion (required + optional selected)
     if (experienceData.motion) {
-      experienceData.motion.forEach(motion => {
+      experienceData.motion.forEach((motion: any) => {
         if (motion.is_required || selectedMotion.includes(motion.id)) {
           total += motion.price;
         }
