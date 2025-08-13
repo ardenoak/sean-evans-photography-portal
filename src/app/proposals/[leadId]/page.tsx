@@ -993,7 +993,7 @@ function ExperienceProposalView({ experienceData, lead, leadId }: { experienceDa
                         <div className="space-y-3 lg:space-y-4">
                           <h4 className="text-xs font-light text-charcoal/60 tracking-wide uppercase">Visual Approach</h4>
                           <div className="space-y-1 lg:space-y-2">
-                            {pkg.highlights.slice(0, 3).map((highlight, idx) => (
+                            {pkg.highlights.slice(0, 3).map((highlight: string, idx: number) => (
                               <p key={idx} className="text-xs font-light text-charcoal/60 leading-relaxed">
                                 • {highlight}
                               </p>
