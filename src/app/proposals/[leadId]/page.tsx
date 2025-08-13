@@ -1039,7 +1039,7 @@ function ExperienceProposalView({ experienceData, lead, leadId }: { experienceDa
               </div>
 
               <div className="space-y-3 mb-12 sm:mb-16">
-                {experienceData.enhancements.map((enhancement) => (
+                {experienceData.enhancements.map((enhancement: any) => (
                   <div
                     key={enhancement.id}
                     onClick={() => {
@@ -1118,7 +1118,7 @@ function ExperienceProposalView({ experienceData, lead, leadId }: { experienceDa
                   </div>
                   
                   <div className="space-y-3">
-                    {experienceData.motion.map((motion) => (
+                    {experienceData.motion.map((motion: any) => (
                       <div
                         key={motion.id}
                         onClick={() => {
