@@ -1106,9 +1106,9 @@ export default function PackagesPage() {
                               motion = packageSnapshots.filter(item => item.type === 'motion');
                             } else {
                               // New format - object with separate arrays
-                              packages = packageSnapshots.packages || [];
-                              enhancements = packageSnapshots.enhancements || [];
-                              motion = packageSnapshots.motion || [];
+                              packages = (packageSnapshots as any).packages || [];
+                              enhancements = (packageSnapshots as any).enhancements || [];
+                              motion = (packageSnapshots as any).motion || [];
                             }
                             
                             const experiencePreviewData = {
