@@ -25,7 +25,7 @@ export async function GET() {
   } catch (error) {
     console.error('Payments API error:', error);
     // If payments table doesn't exist yet, return empty array
-    if (error.message?.includes('relation "payments" does not exist')) {
+    if ((error as any).message?.includes('relation "payments" does not exist')) {
       console.log('Payments table not yet created, returning empty array');
       return NextResponse.json({ data: [] });
     }
