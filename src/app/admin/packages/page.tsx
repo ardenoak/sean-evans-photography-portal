@@ -964,7 +964,7 @@ export default function PackagesPage() {
               </p>
             </div>
 
-            {experiences.filter(exp => exp.status === 'template' || (exp.status === 'draft' && !exp.lead_id)).length === 0 ? (
+            {experiences.filter(exp => exp.status === 'template' || (exp.status === 'draft' && !(exp as any).lead_id)).length === 0 ? (
               <div className="text-center py-20">
                 <div className="space-y-6">
                   <div className="text-charcoal/60 text-xl font-light">
