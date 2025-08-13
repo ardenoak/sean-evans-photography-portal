@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 // Removed AdminAuth - direct access
 import { supabase } from '@/lib/supabase';
+import Logo from '@/components/Logo';
 
 interface Lead {
   id: string;
@@ -39,6 +40,34 @@ export default function AdminLeadsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
+  
+  // Standard Experience Selection Modal
+  const [showStandardExModal, setShowStandardExModal] = useState(false);
+  const [standardExperiences, setStandardExperiences] = useState<any[]>([]);
+  const [standardExLoading, setStandardExLoading] = useState(false);
+  const [assigningExperience, setAssigningExperience] = useState(false);
+
+  // Helper function to calculate timeline
+  const getTimelineInfo = (sessionDate: string) => {
+    const session = new Date(sessionDate);
+    const today = new Date();
+    const diffTime = session.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) {
+      return { text: 'Past Date', color: 'text-red-600' };
+    } else if (diffDays <= 7) {
+      return { text: 'This Week', color: 'text-orange-600' };
+    } else if (diffDays <= 14) {
+      return { text: 'Within 2 Weeks', color: 'text-yellow-600' };
+    } else if (diffDays <= 30) {
+      return { text: 'Within a Month', color: 'text-blue-600' };
+    } else if (diffDays <= 90) {
+      return { text: 'Within 3 Months', color: 'text-verde' };
+    } else {
+      return { text: 'More than 3 Months', color: 'text-charcoal/60' };
+    }
+  };
   const [newLead, setNewLead] = useState({
     first_name: '',
     last_name: '',
@@ -58,7 +87,11 @@ export default function AdminLeadsPage() {
   const [clientSearchQuery, setClientSearchQuery] = useState('');
   const [showClientDropdown, setShowClientDropdown] = useState(false);
   const [leadProposals, setLeadProposals] = useState<any[]>([]);
+  const [leadQuotes, setLeadQuotes] = useState<any[]>([]);
+  const [leadContracts, setLeadContracts] = useState<any[]>([]);
   const [proposalsLoading, setProposalsLoading] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{type: string, id: string, name: string} | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -126,6 +159,7 @@ export default function AdminLeadsPage() {
   const loadLeadProposals = async (leadId: string) => {
     setProposalsLoading(true);
     try {
+      // Load proposals
       const response = await fetch(`/api/admin/proposals?leadId=${leadId}`);
       const result = await response.json();
       
@@ -134,6 +168,43 @@ export default function AdminLeadsPage() {
       } else {
         setLeadProposals(result.data || []);
       }
+
+      // Load quotes for this lead
+      let quotes = [];
+      try {
+        const quotesResponse = await fetch(`/api/quotes?lead_id=${leadId}`);
+        const quotesResult = await quotesResponse.json();
+        
+        if (quotesResponse.ok && quotesResult.data) {
+          quotes = Array.isArray(quotesResult.data) ? quotesResult.data : [quotesResult.data];
+          setLeadQuotes(quotes);
+        } else {
+          setLeadQuotes([]);
+        }
+      } catch (error) {
+        console.error('Error loading quotes:', error);
+        setLeadQuotes([]);
+      }
+
+      // Load contracts for this lead's quotes
+      try {
+        if (quotes.length > 0) {
+          const contractPromises = quotes.map((quote: any) => 
+            fetch(`/api/contracts?quote_id=${quote.id}`)
+              .then(res => res.json())
+              .then(result => result.data)
+              .catch(() => null)
+          );
+          
+          const contracts = await Promise.all(contractPromises);
+          setLeadContracts(contracts.filter(Boolean));
+        } else {
+          setLeadContracts([]);
+        }
+      } catch (error) {
+        console.error('Error loading contracts:', error);
+        setLeadContracts([]);
+      }
     } catch (error) {
       console.error('Error loading proposals:', error);
     } finally {
@@ -141,23 +212,144 @@ export default function AdminLeadsPage() {
     }
   };
 
+  // Load standard experiences (templates) for selection
+  const loadStandardExperiences = async () => {
+    setStandardExLoading(true);
+    try {
+      const response = await fetch('/api/admin/proposals');
+      const result = await response.json();
+      
+      if (!response.ok) {
+        console.error('Error loading standard experiences:', result.error);
+        setStandardExperiences([]);
+      } else {
+        // Filter for template experiences only
+        const templateExperiences = (result.data || []).filter((exp: any) => exp.status === 'template');
+        setStandardExperiences(templateExperiences);
+      }
+    } catch (error) {
+      console.error('Error loading standard experiences:', error);
+      setStandardExperiences([]);
+    } finally {
+      setStandardExLoading(false);
+    }
+  };
+
+  // Assign selected standard experience to current lead
+  const assignStandardExperience = async (experience: any) => {
+    if (!selectedLead) return;
+    
+    setAssigningExperience(true);
+    try {
+      // Create a copy of the template experience for this specific lead
+      const experienceCopy = {
+        lead_id: selectedLead.id,
+        title: `${experience.title} - ${selectedLead.first_name} ${selectedLead.last_name}`,
+        status: 'draft',
+        client_name: `${selectedLead.first_name} ${selectedLead.last_name}`,
+        client_email: selectedLead.email,
+        custom_message: experience.custom_message,
+        subtotal: experience.subtotal,
+        total_amount: experience.total_amount,
+        discount_amount: experience.discount_amount || 0,
+        discount_percentage: experience.discount_percentage || 0
+      };
+
+      const response = await fetch('/api/admin/proposals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(experienceCopy)
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to assign experience');
+      }
+
+      // If the experience has packages, copy those too
+      if (experience.proposal_packages && experience.proposal_packages.length > 0) {
+        const packagesCopy = experience.proposal_packages.map((pkg: any) => ({
+          proposal_id: result.data.id,
+          package_id: pkg.package_id,
+          package_snapshot: pkg.package_snapshot,
+          quantity: pkg.quantity,
+          unit_price: pkg.unit_price,
+          total_price: pkg.total_price
+        }));
+
+        const { error: packagesError } = await supabase
+          .from('proposal_packages')
+          .insert(packagesCopy);
+
+        if (packagesError) {
+          console.warn('Error copying packages:', packagesError);
+        }
+      }
+
+      // Close modal and reload lead data
+      setShowStandardExModal(false);
+      await loadLeadProposals(selectedLead.id);
+      
+      alert(`Experience "${experience.title}" has been assigned to ${selectedLead.first_name} ${selectedLead.last_name}!`);
+    } catch (error) {
+      console.error('Error assigning experience:', error);
+      alert('Error assigning experience. Please try again.');
+    } finally {
+      setAssigningExperience(false);
+    }
+  };
+
   const markLeadAsViewed = async (leadId: string) => {
     try {
-      const { error } = await supabase
-        .from('leads')
-        .update({ 
-          last_viewed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString() 
+      const response = await fetch(`/api/admin/leads/${leadId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          last_viewed_at: new Date().toISOString()
         })
-        .eq('id', leadId);
+      });
 
-      if (error) {
-        console.error('Error marking lead as viewed:', error);
+      if (!response.ok) {
+        console.error('Error marking lead as viewed:', await response.text());
       } else {
         loadLeads();
       }
     } catch (error) {
       console.error('Error marking lead as viewed:', error);
+    }
+  };
+
+  const handleDelete = async (type: 'proposal' | 'quote' | 'contract', id: string, name: string) => {
+    setDeleteConfirm({ type, id, name });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm || !selectedLead) return;
+
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/admin/delete?type=${deleteConfirm.type}&id=${deleteConfirm.id}`, {
+        method: 'DELETE'
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert(result.error || `Failed to delete ${deleteConfirm.type}`);
+        return;
+      }
+
+      // Reload the data for this lead
+      await loadLeadProposals(selectedLead.id);
+      setDeleteConfirm(null);
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      alert(`Error deleting ${deleteConfirm.type}. Please try again.`);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -394,12 +586,27 @@ export default function AdminLeadsPage() {
 
   // Removed sign out
 
-  if ( loading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-ivory to-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-gold to-verde rounded-full mx-auto mb-4 animate-pulse"></div>
-          <p className="text-warm-gray">Loading leads...</p>
+      <div className="min-h-screen bg-ivory flex items-center justify-center">
+        <div className="text-center space-y-8">
+          <div className="relative">
+            <Logo 
+              width={200} 
+              height={67} 
+              variant="light" 
+              className="opacity-90 animate-pulse"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[shimmer_2s_infinite] rounded"></div>
+          </div>
+          <div className="space-y-3">
+            <p className="text-charcoal/70 font-light tracking-wide">Loading lead data</p>
+            <div className="flex justify-center space-x-1">
+              <div className="w-2 h-2 bg-charcoal/40 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+              <div className="w-2 h-2 bg-charcoal/40 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+              <div className="w-2 h-2 bg-charcoal/40 rounded-full animate-bounce"></div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -410,48 +617,29 @@ export default function AdminLeadsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-ivory">
-      {/* Elegant Header - Matching Proposal Aesthetic */}
-      <div className="relative bg-ivory border-b border-charcoal/10">
-        <div className="absolute inset-0 bg-gradient-to-b from-ivory via-ivory/95 to-warm-gray/5"></div>
-        
-        <div className="relative z-10 max-w-6xl mx-auto px-6 py-8">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-6">
-              <button
-                onClick={() => router.push('/admin/dashboard')}
-                className="text-charcoal/60 hover:text-charcoal transition-colors text-lg"
-              >
-                ←
-              </button>
-              <div className="flex items-center space-x-6">
-                <Image 
-                  src="/sean-evans-logo.png" 
-                  alt="Sean Evans Photography" 
-                  width={180} 
-                  height={60}
-                  className="opacity-90"
-                />
-                <div className="border-l border-charcoal/20 pl-6">
-                  <h1 className="text-3xl font-light text-charcoal tracking-wide">Lead Management</h1>
-                  <div className="w-12 h-px bg-charcoal/30 mt-2"></div>
-                </div>
+    <div className="bg-ivory">
+      <div className="bg-gradient-to-b from-charcoal/5 to-transparent">
+        <div className="max-w-7xl mx-auto px-6 pt-8 pb-6">
+          <div className="text-center space-y-6">
+            <div className="space-y-3">
+              <h1 className="text-3xl md:text-4xl font-light text-charcoal tracking-wide">
+                Lead Management
+              </h1>
+              <div className="w-16 h-px bg-charcoal/30 mx-auto"></div>
+            </div>
+            <p className="text-base font-light text-charcoal/70 max-w-2xl mx-auto leading-relaxed">
+              Manage client inquiries, track communications, and convert leads to bookings
+            </p>
+            {newLeadsCount > 0 && (
+              <div className="inline-flex items-center px-4 py-2 bg-charcoal text-white rounded-full text-sm font-medium">
+                🔥 {newLeadsCount} new lead{newLeadsCount !== 1 ? 's' : ''} to review
               </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              {newLeadsCount > 0 && (
-                <div className="bg-charcoal text-ivory px-4 py-2 text-sm font-light tracking-wide animate-pulse">
-                  {newLeadsCount} New Lead{newLeadsCount !== 1 ? 's' : ''}
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Elegant Analytics Section */}
-      <div className="max-w-6xl mx-auto px-6 py-12">
+      <div className="max-w-7xl mx-auto px-6 py-6">
         <div className="text-center mb-16">
           <h2 className="text-2xl font-light text-charcoal tracking-wide mb-4">Overview</h2>
           <div className="w-16 h-px bg-charcoal/20 mx-auto"></div>
@@ -490,7 +678,7 @@ export default function AdminLeadsPage() {
                 <option value="new">New</option>
                 <option value="contacted">Contacted</option>
                 <option value="qualified">Qualified</option>
-                <option value="proposal_sent">Proposal Sent</option>
+                <option value="proposal_sent">Experience Sent</option>
                 <option value="converted">Converted</option>
                 <option value="lost">Lost</option>
               </select>
@@ -538,6 +726,8 @@ export default function AdminLeadsPage() {
                     setEditedLead(lead);
                     setHasUnsavedChanges(false);
                     setLeadProposals([]);
+                    setLeadQuotes([]);
+                    setLeadContracts([]);
                     loadLeadProposals(lead.id);
                     if (isNewLead(lead)) {
                       markLeadAsViewed(lead.id);
@@ -705,7 +895,7 @@ export default function AdminLeadsPage() {
                         <option value="new">New</option>
                         <option value="contacted">Contacted</option>
                         <option value="qualified">Qualified</option>
-                        <option value="proposal_sent">Proposal Sent</option>
+                        <option value="proposal_sent">Experience Sent</option>
                         <option value="converted">Converted</option>
                         <option value="lost">Lost</option>
                       </select>
@@ -746,35 +936,72 @@ export default function AdminLeadsPage() {
                     )}
                   </div>
 
+                  {/* Session Date and Timeline side by side */}
                   <div className="grid grid-cols-2 gap-6">
-                    {selectedLead.preferred_timeline && (
-                      <div>
-                        <p className="text-charcoal/60 text-xs uppercase tracking-wide mb-2">Timeline</p>
-                        <div className="bg-ivory/50 border border-charcoal/10 px-4 py-3 text-charcoal font-light">{selectedLead.preferred_timeline}</div>
+                    {/* Styled Session Date Field */}
+                    <div>
+                      <p className="text-charcoal/60 text-xs uppercase tracking-wide mb-2">Session Date</p>
+                      <div className="relative">
+                        <input
+                          type="date"
+                          value={editedLead.preferred_session_date || ''}
+                          onChange={(e) => handleLeadChange('preferred_session_date', e.target.value)}
+                          className="w-full px-4 py-3 border border-charcoal/20 bg-white font-light focus:outline-none focus:border-charcoal focus:ring-2 focus:ring-charcoal/10 transition-all duration-300 rounded-sm hover:border-charcoal/40"
+                          style={{
+                            colorScheme: 'light',
+                            appearance: 'none',
+                            WebkitAppearance: 'none',
+                            MozAppearance: 'textfield'
+                          }}
+                        />
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                          <svg className="w-5 h-5 text-charcoal/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </div>
                       </div>
-                    )}
-                    
+                    </div>
+
+                    {/* Dynamic Timeline based on session date */}
+                    <div>
+                      <p className="text-charcoal/60 text-xs uppercase tracking-wide mb-2">Timeline</p>
+                      <div className="px-4 py-3 text-charcoal font-light flex items-center h-[50px]">
+                        {editedLead.preferred_session_date ? (
+                          <span className={`${getTimelineInfo(editedLead.preferred_session_date).color} font-medium`}>
+                            {getTimelineInfo(editedLead.preferred_session_date).text}
+                          </span>
+                        ) : (
+                          <span className="text-charcoal/60">
+                            {selectedLead.preferred_timeline || 'Not specified'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Preferred Time and Session Date */}
+                  <div className="grid grid-cols-1 gap-6">
                     {selectedLead.preferred_time && (
                       <div>
                         <p className="text-charcoal/60 text-xs uppercase tracking-wide mb-2">Preferred Time</p>
                         <div className="bg-ivory/50 border border-charcoal/10 px-4 py-3 text-charcoal font-light">{selectedLead.preferred_time}</div>
                       </div>
                     )}
-                  </div>
 
-                  {selectedLead.preferred_session_date && (
-                    <div>
-                      <p className="text-charcoal/60 text-xs uppercase tracking-wide mb-2">Preferred Session Date</p>
-                      <div className="bg-ivory/50 border border-charcoal/10 px-4 py-3 text-charcoal font-light">
-                        {new Date(selectedLead.preferred_session_date).toLocaleDateString('en-US', { 
-                          weekday: 'long', 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        })}
+                    {selectedLead.preferred_session_date && (
+                      <div>
+                        <p className="text-charcoal/60 text-xs uppercase tracking-wide mb-2">Original Preferred Date</p>
+                        <div className="bg-ivory/50 border border-charcoal/10 px-4 py-3 text-charcoal font-light">
+                          {new Date(selectedLead.preferred_session_date).toLocaleDateString('en-US', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
                   {selectedLead.message && (
                     <div>
@@ -808,31 +1035,46 @@ export default function AdminLeadsPage() {
                 </div>
               </div>
 
-              {/* Proposals Section */}
+              {/* Experiences Section */}
               <div className="mt-8 pt-8 border-t border-charcoal/10">
                 <div className="text-center mb-6">
-                  <h4 className="text-lg font-light text-charcoal tracking-wide mb-2">Proposals</h4>
+                  <h4 className="text-lg font-light text-charcoal tracking-wide mb-2">Experiences</h4>
                   <div className="w-12 h-px bg-charcoal/20 mx-auto"></div>
                 </div>
 
                 {proposalsLoading ? (
                   <div className="text-center py-8">
-                    <div className="text-charcoal/60 font-light">Loading proposals...</div>
+                    <div className="text-charcoal/60 font-light">Loading experiences...</div>
                   </div>
                 ) : leadProposals.length === 0 ? (
                   <div className="text-center py-8">
                     <div className="space-y-4">
-                      <div className="text-charcoal/60 font-light">No proposals created yet</div>
-                      <button 
-                        onClick={() => router.push(`/admin/proposals/create/${selectedLead.id}`)}
-                        className="px-6 py-3 bg-charcoal text-white font-light tracking-wide uppercase hover:bg-charcoal/90 transition-all duration-300"
-                      >
-                        Create First Proposal
-                      </button>
+                      <div className="text-charcoal/60 font-light">No experiences created yet</div>
+                      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                        <button 
+                          onClick={() => {
+                            setShowStandardExModal(true);
+                            loadStandardExperiences();
+                          }}
+                          className="px-6 py-3 bg-charcoal text-white font-light tracking-wide uppercase hover:bg-charcoal/90 transition-all duration-300"
+                        >
+                          📦 Standard EX
+                        </button>
+                        <button 
+                          onClick={() => {
+                            // Store lead ID in session storage for the Experience Builder
+                            sessionStorage.setItem('leadId', selectedLead.id);
+                            router.push('/admin/packages');
+                          }}
+                          className="px-6 py-3 border border-charcoal text-charcoal font-light tracking-wide uppercase hover:bg-charcoal hover:text-white transition-all duration-300"
+                        >
+                          🛠️ Custom EX
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-4 mb-6">
                     {leadProposals.map((proposal: any) => {
                       const formatCurrency = (amount: number) => {
                         return new Intl.NumberFormat('en-US', {
@@ -868,7 +1110,26 @@ export default function AdminLeadsPage() {
                                 </div>
                                 {proposal.custom_message && (
                                   <p className="text-sm text-charcoal/80 font-light mb-3 line-clamp-2">
-                                    {proposal.custom_message}
+                                    {(() => {
+                                      try {
+                                        // Try to parse as JSON to get clean text
+                                        const customMessage = typeof proposal.custom_message === 'string' ? 
+                                          JSON.parse(proposal.custom_message) : proposal.custom_message;
+                                        
+                                        if (customMessage?.text) {
+                                          // Extract just the first part of the text field for display
+                                          const cleanText = customMessage.text.split('\n')[0] || 'Experience details';
+                                          return cleanText.replace(/^Experience Type: /, '');
+                                        }
+                                      } catch (e) {
+                                        // Fallback for old format or plain text
+                                        if (typeof proposal.custom_message === 'string') {
+                                          const firstLine = proposal.custom_message.split('\n')[0] || 'Experience details';
+                                          return firstLine.length > 100 ? firstLine.substring(0, 100) + '...' : firstLine;
+                                        }
+                                      }
+                                      return 'Experience details';
+                                    })()}
                                   </p>
                                 )}
                                 <div className="flex items-center gap-4 text-xs text-charcoal/60">
@@ -891,6 +1152,170 @@ export default function AdminLeadsPage() {
                                     Send
                                   </button>
                                 )}
+                                <button
+                                  onClick={() => handleDelete('proposal', proposal.id, proposal.title)}
+                                  className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-all duration-300"
+                                  title="Delete proposal"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Quotes Section */}
+              <div className="mt-8 pt-8 border-t border-charcoal/10">
+                <div className="text-center mb-6">
+                  <h4 className="text-lg font-light text-charcoal tracking-wide mb-2">Quotes</h4>
+                  <div className="w-12 h-px bg-charcoal/20 mx-auto"></div>
+                </div>
+
+                {proposalsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="text-charcoal/60 font-light">Loading quotes...</div>
+                  </div>
+                ) : leadQuotes.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="text-charcoal/60 font-light">No quotes generated yet</div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {leadQuotes.map((quote: any) => {
+                      const formatCurrency = (amount: number) => {
+                        return new Intl.NumberFormat('en-US', {
+                          style: 'currency',
+                          currency: 'USD',
+                          minimumFractionDigits: 0
+                        }).format(amount);
+                      };
+
+                      const getStatusColor = (status: string) => {
+                        switch (status) {
+                          case 'draft': return 'text-charcoal/60 bg-charcoal/10';
+                          case 'sent': return 'text-blue-600 bg-blue-100';
+                          case 'accepted': return 'text-verde bg-verde/20';
+                          case 'rejected': return 'text-red-600 bg-red-100';
+                          default: return 'text-charcoal/60 bg-charcoal/10';
+                        }
+                      };
+
+                      return (
+                        <div key={quote.id} className="border border-charcoal/20 bg-white hover:shadow-sm transition-shadow duration-300">
+                          <div className="p-6">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <h5 className="font-light text-charcoal">{quote.quote_number}</h5>
+                                  <span className={`px-3 py-1 text-xs uppercase tracking-wide font-medium ${getStatusColor(quote.status)}`}>
+                                    {quote.status}
+                                  </span>
+                                </div>
+                                <div className="text-sm text-charcoal/70 font-light mb-3">
+                                  Total: {formatCurrency(quote.total_amount)}
+                                </div>
+                                <div className="text-sm text-charcoal/80 font-light mb-3">
+                                  Package: {quote.selected_package}
+                                </div>
+                                <div className="flex items-center gap-4 text-xs text-charcoal/60">
+                                  <span>Created: {new Date(quote.created_at).toLocaleDateString()}</span>
+                                  {quote.accepted_at && (
+                                    <span>Accepted: {new Date(quote.accepted_at).toLocaleDateString()}</span>
+                                  )}
+                                  <span>Valid until: {new Date(quote.valid_until).toLocaleDateString()}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 ml-4">
+                                <button
+                                  onClick={() => window.open(`/quote/${quote.id}`, '_blank')}
+                                  className="px-4 py-2 text-xs border border-charcoal/30 text-charcoal hover:bg-charcoal hover:text-white transition-all duration-300 uppercase tracking-wide font-light"
+                                >
+                                  View Quote
+                                </button>
+                                <button
+                                  onClick={() => handleDelete('quote', quote.id, quote.quote_number)}
+                                  className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-all duration-300"
+                                  title="Delete quote"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Contracts Section */}
+              <div className="mt-8 pt-8 border-t border-charcoal/10">
+                <div className="text-center mb-6">
+                  <h4 className="text-lg font-light text-charcoal tracking-wide mb-2">Contracts</h4>
+                  <div className="w-12 h-px bg-charcoal/20 mx-auto"></div>
+                </div>
+
+                {proposalsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="text-charcoal/60 font-light">Loading contracts...</div>
+                  </div>
+                ) : leadContracts.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="text-charcoal/60 font-light">No contracts generated yet</div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {leadContracts.map((contract: any) => {
+                      const getStatusColor = (status: string) => {
+                        switch (status) {
+                          case 'pending': return 'text-orange-600 bg-orange-100';
+                          case 'signed': return 'text-verde bg-verde/20';
+                          case 'cancelled': return 'text-red-600 bg-red-100';
+                          default: return 'text-charcoal/60 bg-charcoal/10';
+                        }
+                      };
+
+                      return (
+                        <div key={contract.id} className="border border-charcoal/20 bg-white hover:shadow-sm transition-shadow duration-300">
+                          <div className="p-6">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <h5 className="font-light text-charcoal">{contract.contract_number}</h5>
+                                  <span className={`px-3 py-1 text-xs uppercase tracking-wide font-medium ${getStatusColor(contract.status)}`}>
+                                    {contract.status}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-4 text-xs text-charcoal/60">
+                                  <span>Created: {new Date(contract.created_at).toLocaleDateString()}</span>
+                                  {contract.client_signed_at && (
+                                    <span>Signed: {new Date(contract.client_signed_at).toLocaleDateString()}</span>
+                                  )}
+                                  {contract.client_signature && (
+                                    <span>Signed by: {contract.client_signature}</span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 ml-4">
+                                <button
+                                  onClick={() => window.open(`/contract/${contract.quote_id}`, '_blank')}
+                                  className="px-4 py-2 text-xs border border-charcoal/30 text-charcoal hover:bg-charcoal hover:text-white transition-all duration-300 uppercase tracking-wide font-light"
+                                >
+                                  View Contract
+                                </button>
+                                <button
+                                  onClick={() => handleDelete('contract', contract.id, contract.contract_number)}
+                                  className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-all duration-300"
+                                  title="Delete contract"
+                                >
+                                  🗑️
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -930,13 +1355,28 @@ export default function AdminLeadsPage() {
                     </button>
                   )}
                   
-                  <button 
-                    onClick={() => router.push(`/admin/proposals/create/${selectedLead.id}`)}
-                    className="bg-charcoal text-white px-6 py-2 text-sm font-light tracking-wide uppercase hover:bg-charcoal/90 transition-all duration-300 flex items-center space-x-2"
-                  >
-                    <span>📋</span>
-                    <span>Create Proposal</span>
-                  </button>
+                  {/* Show Create Experience options if no experiences exist OR if existing experience was rejected */}
+                  {(leadProposals.length === 0 || leadProposals.some((p: any) => p.status === 'rejected')) && (
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => {
+                          setShowStandardExModal(true);
+                          loadStandardExperiences();
+                        }}
+                        className="bg-charcoal text-white px-4 py-2 text-sm font-light tracking-wide uppercase hover:bg-charcoal/90 transition-all duration-300 flex items-center space-x-2"
+                      >
+                        <span>📦</span>
+                        <span>Standard EX</span>
+                      </button>
+                      <button 
+                        onClick={() => router.push(`/admin/proposals/create-custom/${selectedLead.id}`)}
+                        className="border border-charcoal text-charcoal px-4 py-2 text-sm font-light tracking-wide uppercase hover:bg-charcoal hover:text-white transition-all duration-300 flex items-center space-x-2"
+                      >
+                        <span>🛠️</span>
+                        <span>Custom EX</span>
+                      </button>
+                    </div>
+                  )}
                   
                   <button className="border border-charcoal/30 text-charcoal px-4 py-2 text-sm font-light tracking-wide uppercase hover:border-charcoal hover:bg-charcoal hover:text-white transition-all duration-300">
                     Convert to Session
@@ -1306,6 +1746,167 @@ export default function AdminLeadsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-lg max-w-md w-full mx-4">
+            <div className="text-center">
+              <div className="text-red-500 text-4xl mb-4">⚠️</div>
+              <h3 className="text-xl font-light text-charcoal mb-4">Delete {deleteConfirm.type.charAt(0).toUpperCase() + deleteConfirm.type.slice(1)}</h3>
+              <p className="text-charcoal/70 font-light mb-6">
+                Are you sure you want to delete <strong>{deleteConfirm.name}</strong>? This action cannot be undone.
+              </p>
+              <div className="flex gap-4 justify-center">
+                <button
+                  onClick={() => setDeleteConfirm(null)}
+                  disabled={deleting}
+                  className="px-6 py-3 border border-charcoal/30 text-charcoal hover:bg-charcoal hover:text-white transition-all duration-300 font-light uppercase tracking-wide disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  disabled={deleting}
+                  className="px-6 py-3 bg-red-600 text-white hover:bg-red-700 transition-all duration-300 font-light uppercase tracking-wide disabled:opacity-50"
+                >
+                  {deleting ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Standard Experience Selection Modal */}
+      {showStandardExModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white max-w-4xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="text-2xl font-light text-charcoal tracking-wide">
+                    Select Standard Experience
+                  </h2>
+                  <p className="text-charcoal/60 font-light mt-2">
+                    Choose a standard experience to assign to {selectedLead?.first_name} {selectedLead?.last_name}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowStandardExModal(false)}
+                  className="p-2 hover:bg-charcoal/5 rounded transition-colors"
+                >
+                  <svg className="w-6 h-6 text-charcoal/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {standardExLoading ? (
+                <div className="text-center py-12">
+                  <div className="text-charcoal/60 font-light">Loading standard experiences...</div>
+                </div>
+              ) : standardExperiences.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="space-y-4">
+                    <div className="text-charcoal/60 font-light">No standard experiences found</div>
+                    <div className="text-sm text-charcoal/40">
+                      Create some standard experiences in the Experience & Pricing section first.
+                    </div>
+                    <button
+                      onClick={() => {
+                        setShowStandardExModal(false);
+                        router.push('/admin/packages');
+                      }}
+                      className="px-6 py-3 bg-charcoal text-white font-light tracking-wide uppercase hover:bg-charcoal/90 transition-all duration-300"
+                    >
+                      Create Standard Experience
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {standardExperiences.map((experience) => {
+                    const formatCurrency = (amount: number) => {
+                      return new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'USD',
+                        minimumFractionDigits: 0
+                      }).format(amount);
+                    };
+
+                    return (
+                      <div
+                        key={experience.id}
+                        className="border border-charcoal/20 bg-white hover:shadow-lg transition-shadow duration-300"
+                      >
+                        <div className="p-6">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-3">
+                                  <h3 className="text-xl font-light text-charcoal">{experience.title}</h3>
+                                  <span className="bg-verde/20 text-verde px-3 py-1 text-xs font-medium uppercase tracking-wide">
+                                    Standard
+                                  </span>
+                                </div>
+                                <div className="text-2xl font-light text-charcoal">
+                                  {formatCurrency(experience.total_amount || 0)}
+                                </div>
+                                {experience.custom_message && (
+                                  <p className="text-sm font-light text-charcoal/80 leading-relaxed">
+                                    {(() => {
+                                      try {
+                                        // Try to parse as JSON to get clean text
+                                        const customMessage = typeof experience.custom_message === 'string' ? 
+                                          JSON.parse(experience.custom_message) : experience.custom_message;
+                                        
+                                        if (customMessage?.text) {
+                                          // Extract clean description from the text field
+                                          const cleanText = customMessage.text.split('\n').slice(1).join(' ') || 'Standard experience template';
+                                          return cleanText.length > 200 ? cleanText.substring(0, 200) + '...' : cleanText;
+                                        }
+                                      } catch (e) {
+                                        // Fallback for old format or plain text
+                                        if (typeof experience.custom_message === 'string') {
+                                          return experience.custom_message.length > 200 ? 
+                                            experience.custom_message.substring(0, 200) + '...' : 
+                                            experience.custom_message;
+                                        }
+                                      }
+                                      return 'Standard experience template';
+                                    })()}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => assignStandardExperience(experience)}
+                              disabled={assigningExperience}
+                              className="px-6 py-3 bg-charcoal text-white font-light tracking-wide uppercase hover:bg-charcoal/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {assigningExperience ? 'Assigning...' : 'Select This Experience'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-charcoal/10">
+                <button
+                  onClick={() => setShowStandardExModal(false)}
+                  className="px-6 py-3 border border-charcoal/30 text-charcoal font-light tracking-wide uppercase hover:bg-charcoal hover:text-white transition-all duration-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -26,19 +26,30 @@ export async function POST(
     }
 
     // Generate contract number
-    const contractNumber = `C-${Date.now()}`
+    let contractNumber;
+    try {
+      const { data: contractNumberData, error: contractNumberError } = await supabase
+        .rpc('generate_contract_number')
+      
+      if (contractNumberError) {
+        console.warn('Contract number function not available, using fallback:', contractNumberError.message)
+        contractNumber = `CON-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`
+      } else {
+        contractNumber = contractNumberData || `CON-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`
+      }
+    } catch (error) {
+      console.warn('Error calling contract number function, using fallback:', error)
+      contractNumber = `CON-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`
+    }
     
     // Create contract
     const { data: contract, error: contractError } = await supabase
       .from('contracts')
       .insert({
         quote_id: quoteId,
-        proposal_id: quote.proposal_id,
-        lead_id: quote.lead_id,
         contract_number: contractNumber,
-        status: 'draft',
-        terms: `
-PHOTOGRAPHY SESSION CONTRACT
+        status: 'pending',
+        terms: `PHOTOGRAPHY SESSION CONTRACT
 
 This agreement is between Sean Evans Photography (the "Photographer") and the client named in the associated quote (the "Client").
 
@@ -46,11 +57,6 @@ SESSION DETAILS:
 - Package: As specified in Quote #${quote.quote_number}
 - Total Investment: As specified in the accepted quote
 - Session Date: To be scheduled upon contract execution
-
-PAYMENT TERMS:
-1. 50% deposit required upon contract signing to secure session date
-2. Remaining balance due 24 hours prior to session
-3. All payments are non-refundable except in cases of photographer cancellation
 
 SESSION TERMS:
 1. The Photographer will provide professional photography services as outlined in the package
@@ -63,18 +69,20 @@ DELIVERY:
 2. Full gallery: As specified in package timeline
 3. All images professionally edited and color-corrected
 
-RESCHEDULING & CANCELLATION:
-1. Client may reschedule up to 48 hours in advance without penalty
-2. Less than 48 hours notice: deposit forfeit
-3. Weather contingencies: Alternative indoor locations available
-
 SATISFACTION GUARANTEE:
 The Photographer stands behind all work and will address concerns promptly. In rare cases of technical issues (not styling preferences), reshoot will be provided.
 
-By signing below, both parties agree to the terms outlined in this contract and the associated quote.
-        `.trim(),
-        cancellation_policy: 'Sessions may be cancelled or rescheduled up to 48 hours in advance. Less than 48 hours notice will result in deposit forfeiture.',
-        payment_terms: '50% deposit required upon signing. Balance due 24 hours before session. All payments non-refundable except in cases of photographer cancellation.',
+By signing below, both parties agree to the terms outlined in this contract and the associated quote.`,
+        payment_terms: `PAYMENT TERMS:
+1. 50% deposit required upon contract signing to secure session date
+2. Remaining balance due 24 hours prior to session
+3. All payments are non-refundable except in cases of photographer cancellation`,
+        cancellation_policy: `CANCELLATION & RESCHEDULING:
+1. Client may reschedule up to 48 hours in advance without penalty
+2. Less than 48 hours notice: deposit forfeit
+3. Weather contingencies: Alternative indoor locations available
+4. Sessions may be cancelled or rescheduled up to 48 hours in advance
+5. Less than 48 hours notice will result in deposit forfeiture`,
         signature_required: true
       })
       .select()

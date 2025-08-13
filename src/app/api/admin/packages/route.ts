@@ -7,10 +7,7 @@ export async function GET(request: NextRequest) {
     
     const { data, error } = await supabase
       .from('custom_packages')
-      .select(`
-        *,
-        category:package_categories(*)
-      `)
+      .select('*')
       .eq('is_active', true)
       .order('created_at', { ascending: false })
 

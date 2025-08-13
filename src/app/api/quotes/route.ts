@@ -14,61 +14,96 @@ export async function POST(request: NextRequest) {
       selected_video_addons = [],
       total_amount,
       client_name,
-      client_email
+      client_email,
+      package_details
     } = body
 
-    // Generate quote number
-    const quoteNumber = `Q-${Date.now()}`
+    // Generate quote number using database function or fallback
+    let quoteNumber;
+    try {
+      const { data: quoteNumberData, error: quoteNumberError } = await supabase
+        .rpc('generate_quote_number')
+      
+      if (quoteNumberError) {
+        console.warn('Quote number function not available, using fallback:', quoteNumberError.message)
+        quoteNumber = `SEP-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`
+      } else {
+        quoteNumber = quoteNumberData || `SEP-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`
+      }
+    } catch (error) {
+      console.warn('Error calling quote number function, using fallback:', error)
+      quoteNumber = `SEP-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`
+    }
     
-    // Calculate valid until (30 days from now)
+    // Calculate valid until (7 days from now)
     const validUntil = new Date()
-    validUntil.setDate(validUntil.getDate() + 30)
+    validUntil.setDate(validUntil.getDate() + 7)
 
-    // Create quote
+    // Create quote with all required fields
     const { data: quote, error: quoteError } = await supabase
       .from('quotes')
       .insert({
         proposal_id,
         lead_id,
         quote_number: quoteNumber,
+        client_name,
+        client_email,
+        selected_package,
+        selected_addons,
+        selected_video_addons,
         status: 'draft',
         valid_until: validUntil.toISOString().split('T')[0],
         subtotal: total_amount,
         total_amount: total_amount,
         terms_and_conditions: `
-Terms & Conditions:
+QUOTE SUMMARY
 
-1. SESSION BOOKING
-- A 50% deposit is required to secure your session date
-- Balance is due 24 hours before your session
-- Rescheduling is allowed up to 48 hours in advance
+Your personalized quote includes everything needed for an exceptional portrait experience. A 50% deposit secures your session date, with the balance due 24 hours prior to your session.
 
-2. DELIVERY & TIMELINE
-- Sneak peek gallery delivered within 24-48 hours
-- Full curated gallery delivered within the timeframe specified in your package
-- All images are professionally edited and color-corrected
+This quote expires in 7 days. Questions? We're here to help make this process seamless.
 
-3. USAGE RIGHTS
-- Personal use and social media sharing included
-- Commercial usage requires separate licensing agreement
-- All images remain property of Sean Evans Photography with shared usage rights
-
-4. WEATHER & LOCATION
-- Backup indoor locations available for weather contingencies
-- Client is responsible for any location fees or permits if required
-
-5. SATISFACTION GUARANTEE
-- We stand behind our work and will address any concerns promptly
-- Reshoots available in rare cases of technical issues (not styling preferences)
-
-This quote is valid for 30 days from issue date.
+Looking forward to creating something beautiful together.
         `.trim(),
         special_notes: `
-Selected Package: ${selected_package}
-${selected_addons.length > 0 ? `Add-ons: ${selected_addons.join(', ')}` : ''}
-${selected_video_addons.length > 0 ? `Video Add-ons: ${selected_video_addons.join(', ')}` : ''}
+PACKAGE DETAILS
 
-Thank you for choosing Sean Evans Photography. We're excited to create something beautiful together.
+${package_details ? `
+${package_details.title}
+${package_details.description}
+
+SESSION SPECIFICATIONS
+• Duration: ${package_details.sessions}
+• Locations: ${package_details.locations} unique settings
+• Gallery: ${package_details.gallery}
+• Styling: ${package_details.looks} looks
+• Delivery: ${package_details.delivery}
+${package_details.video ? `• Video: ${package_details.video}` : ''}
+${package_details.turnaround && package_details.turnaround !== 'No sneak peek' ? `• Preview: ${package_details.turnaround}` : ''}
+${package_details.fineArt ? `• Fine Art Credit: ${package_details.fineArt}` : ''}
+
+CREATIVE APPROACH
+Theme: ${package_details.theme_keywords}
+${package_details.investment_note}
+` : `
+Selected Experience: ${selected_package}
+
+SESSION SPECIFICATIONS
+• Professional photography session with editorial direction
+• Complete post-production and color correction
+• Curated gallery of professionally edited images
+• Personal usage rights for social media and personal use
+`}
+
+${selected_addons.length > 0 ? `ENHANCEMENTS
+${selected_addons.map((addon: any) => `• ${addon}`).join('\n')}
+
+` : ''}${selected_video_addons.length > 0 ? `MOTION ELEMENTS
+${selected_video_addons.map((video: any) => `• ${video}`).join('\n')}
+
+` : ''}NEXT STEPS
+Once you accept this quote, we'll generate your contract with full session details and begin planning your personalized experience.
+
+⏰ Valid until: ${validUntil.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
         `.trim()
       })
       .select()

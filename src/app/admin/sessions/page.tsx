@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 // Removed AdminAuth - direct access
 import { supabase } from '@/lib/supabase';
+import Logo from '@/components/Logo';
 
 interface Session {
   id: string;
@@ -216,10 +217,25 @@ export default function AdminSessionsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-ivory to-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-gold to-verde rounded-full mx-auto mb-4 animate-pulse"></div>
-          <p className="text-warm-gray">Loading sessions...</p>
+      <div className="min-h-screen bg-ivory flex items-center justify-center">
+        <div className="text-center space-y-8">
+          <div className="relative">
+            <Logo 
+              width={200} 
+              height={67} 
+              variant="light" 
+              className="opacity-90 animate-pulse"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[shimmer_2s_infinite] rounded"></div>
+          </div>
+          <div className="space-y-3">
+            <p className="text-charcoal/70 font-light tracking-wide">Loading session data</p>
+            <div className="flex justify-center space-x-1">
+              <div className="w-2 h-2 bg-charcoal/40 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+              <div className="w-2 h-2 bg-charcoal/40 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+              <div className="w-2 h-2 bg-charcoal/40 rounded-full animate-bounce"></div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -228,169 +244,226 @@ export default function AdminSessionsPage() {
   // Direct admin access without auth
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-ivory to-white">
-      {/* Compact Header */}
-      <header className="bg-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={() => router.push('/admin/dashboard')}
-                className="text-warm-gray hover:text-charcoal transition-colors"
-              >
-                ←
-              </button>
-              <Image
-                src="/sean-evans-logo.png"
-                alt="Sean Evans Photography"
-                width={200}
-                height={80}
-                className="h-8 w-auto"
-                priority
-              />
-              <div>
-                <h1 className="text-lg font-didot text-charcoal">Sessions</h1>
+    <div className="bg-ivory">
+      <div className="bg-gradient-to-b from-charcoal/5 to-transparent">
+        <div className="max-w-7xl mx-auto px-6 pt-8 pb-6">
+          <div className="text-center space-y-6">
+            <div className="space-y-3">
+              <h1 className="text-3xl md:text-4xl font-light text-charcoal tracking-wide">
+                Session Management
+              </h1>
+              <div className="w-16 h-px bg-charcoal/30 mx-auto"></div>
+            </div>
+            <p className="text-base font-light text-charcoal/70 max-w-2xl mx-auto leading-relaxed">
+              Schedule, track, and manage photography sessions with clients
+            </p>
+            {upcomingSessions > 0 && (
+              <div className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-full text-sm font-medium">
+                📅 {upcomingSessions} upcoming session{upcomingSessions !== 1 ? 's' : ''}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        {/* Session Stats */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-light text-charcoal tracking-wide mb-8">Session Overview</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="border border-charcoal/20 bg-white hover:shadow-lg transition-shadow duration-300">
+              <div className="p-8 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-3xl font-light text-charcoal mb-2">{sessions.length}</div>
+                    <div className="text-sm font-light tracking-wider uppercase text-charcoal/60">Total Sessions</div>
+                  </div>
+                  <div className="w-12 h-12 bg-charcoal/10 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-charcoal/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              {upcomingSessions > 0 && (
-                <div className="bg-verde text-white px-3 py-1 rounded-full text-sm font-semibold animate-pulse">
-                  📅 {upcomingSessions} Upcoming
+
+            <div className="border border-charcoal/20 bg-white hover:shadow-lg transition-shadow duration-300">
+              <div className="p-8 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-3xl font-light text-charcoal mb-2">{statusCounts['Confirmed & Scheduled'] || 0}</div>
+                    <div className="text-sm font-light tracking-wider uppercase text-charcoal/60">Confirmed</div>
+                  </div>
+                  <div className="w-12 h-12 bg-verde/10 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-verde" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
                 </div>
-              )}
-              {/* No sign out needed - direct access */}
+              </div>
+            </div>
+
+            <div className="border border-charcoal/20 bg-white hover:shadow-lg transition-shadow duration-300">
+              <div className="p-8 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-3xl font-light text-charcoal mb-2">{statusCounts.Completed || 0}</div>
+                    <div className="text-sm font-light tracking-wider uppercase text-charcoal/60">Completed</div>
+                  </div>
+                  <div className="w-12 h-12 bg-gold/10 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="border border-charcoal/20 bg-white hover:shadow-lg transition-shadow duration-300">
+              <div className="p-8 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-3xl font-light text-charcoal mb-2">{upcomingSessions}</div>
+                    <div className="text-sm font-light tracking-wider uppercase text-charcoal/60">Upcoming</div>
+                  </div>
+                  <div className="w-12 h-12 bg-blue-500/10 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        {/* Compact Stats */}
-        <div className="grid grid-cols-4 gap-3 mb-4">
-          <div className="bg-white rounded-lg shadow p-3 text-center">
-            <div className="text-lg font-bold text-charcoal">{sessions.length}</div>
-            <div className="text-xs text-warm-gray">Total</div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-3 text-center">
-            <div className="text-lg font-bold text-verde">{statusCounts['Confirmed & Scheduled'] || 0}</div>
-            <div className="text-xs text-warm-gray">Confirmed</div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-3 text-center">
-            <div className="text-lg font-bold text-gold">{statusCounts.Completed || 0}</div>
-            <div className="text-xs text-warm-gray">Completed</div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-3 text-center">
-            <div className="text-lg font-bold text-blue-600">{upcomingSessions}</div>
-            <div className="text-xs text-warm-gray">Upcoming</div>
-          </div>
-        </div>
-
-        {/* Compact Filters */}
-        <div className="bg-white rounded-lg shadow p-4 mb-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-3 py-2 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold text-sm"
-            >
-              <option value="all">All Status</option>
-              <option value="Confirmed & Scheduled">Confirmed</option>
-              <option value="Completed">Completed</option>
-              <option value="Pending">Pending</option>
-              <option value="Cancelled">Cancelled</option>
-            </select>
-            
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search sessions..."
-              className="flex-1 px-3 py-2 border border-warm-gray/30 rounded-lg focus:ring-2 focus:ring-gold text-sm"
-            />
-            
+        {/* Session Management Tools */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-light text-charcoal tracking-wide">Active Sessions</h2>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="bg-gold text-white px-4 py-2 rounded-lg hover:bg-gold/90 transition-colors text-sm font-medium"
+              className="bg-charcoal text-white px-6 py-3 text-sm font-light tracking-wide uppercase hover:bg-charcoal/90 transition-colors"
             >
-              + Add Session
+              + Schedule Session
             </button>
+          </div>
+          
+          <div className="border border-charcoal/20 bg-white p-6 mb-6">
+            <div className="flex flex-col lg:flex-row gap-4">
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="px-4 py-3 border border-charcoal/20 text-sm font-light focus:ring-2 focus:ring-charcoal/20 focus:border-charcoal"
+              >
+                <option value="all">All Sessions</option>
+                <option value="Confirmed & Scheduled">Confirmed Sessions</option>
+                <option value="Completed">Completed Sessions</option>
+                <option value="Pending">Pending Sessions</option>
+                <option value="Cancelled">Cancelled Sessions</option>
+              </select>
+              
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by client name, session type, or title..."
+                className="flex-1 px-4 py-3 border border-charcoal/20 text-sm font-light focus:ring-2 focus:ring-charcoal/20 focus:border-charcoal"
+              />
+            </div>
           </div>
         </div>
 
-        {/* Compact Sessions List */}
-        <div className="bg-white rounded-lg shadow">
+        {/* Sessions List */}
+        <div className="border border-charcoal/20 bg-white">
           {filteredSessions.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-warm-gray">No sessions found</p>
+            <div className="text-center py-16">
+              <div className="w-16 h-16 bg-charcoal/5 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <svg className="w-8 h-8 text-charcoal/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <p className="text-charcoal/60 font-light">No sessions found</p>
+              <p className="text-charcoal/40 text-sm mt-2">Try adjusting your search criteria</p>
             </div>
           ) : (
-            <div className="divide-y divide-warm-gray/20">
+            <div className="divide-y divide-charcoal/10">
               {filteredSessions.map((session) => (
                 <div
                   key={session.id}
-                  className={`p-4 hover:bg-ivory/30 cursor-pointer transition-colors relative ${
-                    isUpcoming(session.session_date) ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                  className={`p-6 hover:bg-ivory/30 cursor-pointer transition-all duration-200 ${
+                    isUpcoming(session.session_date) ? 'bg-blue-50/50 border-l-4 border-l-blue-500' : ''
                   }`}
                   onClick={() => setSelectedSession(session)}
                 >
-                  {/* Upcoming Indicator */}
-                  {isUpcoming(session.session_date) && (
-                    <div className="absolute top-2 right-2">
-                      <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center space-x-2">
-                          <p className="text-sm font-semibold text-charcoal truncate">
-                            {session.session_title}
-                          </p>
-                          {isUpcoming(session.session_date) && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-500 text-white">
-                              UPCOMING
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-warm-gray truncate">
-                          {session.clients.first_name} {session.clients.last_name} • {session.session_type}
-                        </p>
-                        <div className="flex items-center space-x-3 mt-1">
-                          <span className="text-xs text-charcoal bg-ivory/50 px-2 py-0.5 rounded">
-                            {session.session_date}
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <h3 className="text-lg font-light text-charcoal truncate">
+                          {session.session_title}
+                        </h3>
+                        {isUpcoming(session.session_date) && (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-500 text-white">
+                            UPCOMING
                           </span>
-                          {session.session_time && (
-                            <span className="text-xs text-charcoal bg-gold/20 px-2 py-0.5 rounded">
-                              {session.session_time}
-                            </span>
-                          )}
-                          {session.investment && (
-                            <span className="text-xs text-charcoal bg-verde/20 px-2 py-0.5 rounded">
-                              {session.investment}
-                            </span>
-                          )}
-                        </div>
+                        )}
                       </div>
+                      
+                      <div className="flex items-center space-x-4 text-sm text-charcoal/70 mb-3">
+                        <span className="font-medium">
+                          {session.clients.first_name} {session.clients.last_name}
+                        </span>
+                        <span>•</span>
+                        <span>{session.session_type}</span>
+                        {session.duration && (
+                          <>
+                            <span>•</span>
+                            <span>{session.duration}</span>
+                          </>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center space-x-4 text-sm">
+                        <span className="inline-flex items-center px-3 py-1 bg-charcoal/5 text-charcoal rounded">
+                          📅 {session.session_date}
+                        </span>
+                        {session.session_time && (
+                          <span className="inline-flex items-center px-3 py-1 bg-gold/10 text-charcoal rounded">
+                            🕐 {session.session_time}
+                          </span>
+                        )}
+                        {session.investment && (
+                          <span className="inline-flex items-center px-3 py-1 bg-verde/10 text-charcoal rounded">
+                            💰 {session.investment}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {session.location && (
+                        <div className="mt-3">
+                          <p className="text-sm text-charcoal/60">
+                            📍 {session.location}
+                          </p>
+                        </div>
+                      )}
                     </div>
                     
-                    <div className="flex items-center space-x-2">
-                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(session.status)}`}>
-                        {session.status === 'Confirmed & Scheduled' ? 'CONFIRMED' : session.status.toUpperCase()}
+                    <div className="flex flex-col items-end space-y-2 ml-6">
+                      <span className={`px-3 py-1 text-xs font-light tracking-wide uppercase rounded ${
+                        session.status === 'Confirmed & Scheduled' ? 'bg-verde/20 text-verde' :
+                        session.status === 'Completed' ? 'bg-gold/20 text-gold' :
+                        session.status === 'Pending' ? 'bg-orange-100 text-orange-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {session.status === 'Confirmed & Scheduled' ? 'Confirmed' : session.status}
                       </span>
-                      <span className="text-xs text-warm-gray">
+                      <span className="text-xs text-charcoal/50">
                         {formatDate(session.session_date)}
                       </span>
                     </div>
                   </div>
-
-                  {session.location && (
-                    <div className="mt-2">
-                      <p className="text-xs text-warm-gray line-clamp-1">
-                        📍 {session.location}
-                      </p>
-                    </div>
-                  )}
                 </div>
               ))}
             </div>

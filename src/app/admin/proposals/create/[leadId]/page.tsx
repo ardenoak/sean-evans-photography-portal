@@ -73,28 +73,24 @@ export default function CreateProposalPage() {
 
   const loadData = async () => {
     try {
-      // Load lead info
-      const { data: leadData, error: leadError } = await supabase
-        .from('leads')
-        .select('*')
-        .eq('id', leadId)
-        .single();
+      // Load lead info via API route
+      const response = await fetch(`/api/admin/leads/${leadId}`);
+      const result = await response.json();
 
-      if (leadError) {
-        console.error('Error loading lead:', leadError);
-        // Don't throw, just return to prevent further errors
+      if (!response.ok) {
+        console.error('Error loading lead:', result.error);
         setLoading(false);
         return;
       }
       
-      if (!leadData) {
+      if (!result.data) {
         console.error('No lead found with ID:', leadId);
         setLoading(false);
         return;
       }
       
-      setLead(leadData);
-      setProposalTitle(`Custom Proposal - ${leadData.first_name} ${leadData.last_name}`);
+      setLead(result.data);
+      setProposalTitle(`Custom Proposal - ${result.data.first_name} ${result.data.last_name}`);
 
       // Load categories (handle table might not exist)
       try {

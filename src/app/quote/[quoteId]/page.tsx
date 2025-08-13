@@ -123,9 +123,18 @@ export default function QuotePage() {
       <div className="bg-gradient-to-b from-charcoal to-charcoal/90 text-white">
         <div className="max-w-4xl mx-auto px-6 py-12">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-light tracking-wide mb-2">Quote {quote.quote_number}</h1>
-              <p className="text-white/70 font-light">Sean Evans Photography</p>
+            <div className="flex items-center space-x-6">
+              <Image 
+                src="/sean-evans-logo.png" 
+                alt="Sean Evans Photography" 
+                width={120} 
+                height={40}
+                className="opacity-90"
+              />
+              <div className="border-l border-white/20 pl-6">
+                <h1 className="text-3xl font-light tracking-wide mb-2">Quote {quote.quote_number}</h1>
+                <p className="text-white/70 font-light">Sean Evans Photography</p>
+              </div>
             </div>
             <div className="text-right">
               <div className={`inline-block px-4 py-2 rounded-full text-sm font-light tracking-wide uppercase ${
@@ -175,16 +184,16 @@ export default function QuotePage() {
                     <span className="text-charcoal/70">Subtotal:</span>
                     <span className="text-charcoal">{formatCurrency(quote.subtotal)}</span>
                   </div>
-                  {quote.discount_amount && (
+                  {(quote.discount_amount || 0) > 0 && (
                     <div className="flex justify-between text-verde">
                       <span>Discount:</span>
-                      <span>-{formatCurrency(quote.discount_amount)}</span>
+                      <span>-{formatCurrency(quote.discount_amount || 0)}</span>
                     </div>
                   )}
-                  {quote.tax_amount && (
+                  {(quote.tax_amount || 0) > 0 && (
                     <div className="flex justify-between">
                       <span className="text-charcoal/70">Tax:</span>
-                      <span className="text-charcoal">{formatCurrency(quote.tax_amount)}</span>
+                      <span className="text-charcoal">{formatCurrency(quote.tax_amount || 0)}</span>
                     </div>
                   )}
                   <div className="border-t border-charcoal/10 pt-2 mt-4">
