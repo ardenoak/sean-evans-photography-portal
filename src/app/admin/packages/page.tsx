@@ -1157,10 +1157,10 @@ export default function PackagesPage() {
                               imageUrl = '';
                             } else {
                               // New format - object with separate arrays
-                              packages = packageSnapshots.packages || [];
-                              enhancements = packageSnapshots.enhancements || [];
-                              motion = packageSnapshots.motion || [];
-                              imageUrl = packageSnapshots.experience_image_url || '';
+                              packages = (packageSnapshots as any).packages || [];
+                              enhancements = (packageSnapshots as any).enhancements || [];
+                              motion = (packageSnapshots as any).motion || [];
+                              imageUrl = (packageSnapshots as any).experience_image_url || '';
                             }
                             
                             // Load the experience data into the form
