@@ -1187,11 +1187,11 @@ export default function PackagesPage() {
                             
                             // Load packages, enhancements, and motion
                             setSelectedPackages(packages);
-                            setSelectedEnhancements(enhancements.map(item => ({
+                            setSelectedEnhancements(enhancements.map((item: any) => ({
                               package: item,
                               required: item.is_required || false
                             })));
-                            setSelectedMotion(motion.map(item => ({
+                            setSelectedMotion(motion.map((item: any) => ({
                               package: item,
                               required: item.is_required || false
                             })));
