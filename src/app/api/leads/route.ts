@@ -2,23 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 
 export async function GET(request: NextRequest) {
-  // Authentication check in production
-  if (process.env.NODE_ENV === 'production') {
-    const apiKey = request.headers.get('x-api-key');
-    const expectedKey = process.env.NEXT_PUBLIC_ADMIN_API_KEY;
-    
-    if (!apiKey || !expectedKey || apiKey !== expectedKey) {
-      console.warn(`[LEADS API] Authentication failed - API key mismatch`);
-      return NextResponse.json(
-        { 
-          error: 'Authentication required',
-          message: 'Invalid or missing API key'
-        },
-        { status: 401 }
-      );
-    }
-    console.log(`[LEADS API] Authentication successful`);
-  }
+  // Authentication is now handled by middleware
   
   try {
     const supabase = getSupabaseAdmin()
