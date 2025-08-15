@@ -1,7 +1,119 @@
 {
-  "extends": "next/core-web-vitals",
+  "extends": [
+    "next/core-web-vitals",
+    "eslint:recommended",
+    "prettier"
+  ],
+  "plugins": [
+    "@typescript-eslint",
+    "jest",
+    "testing-library"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "env": {
+    "browser": true,
+    "node": true,
+    "es2022": true,
+    "jest": true
+  },
   "rules": {
+    // Original rules
     "react/no-unescaped-entities": "off",
-    "react-hooks/exhaustive-deps": "warn"
-  }
+    "react-hooks/exhaustive-deps": "warn",
+    
+    // TypeScript specific rules
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/explicit-module-boundary-types": "off",
+    "@typescript-eslint/no-non-null-assertion": "warn",
+    
+    // React specific rules
+    "react/prop-types": "off",
+    "react/react-in-jsx-scope": "off",
+    "react-hooks/rules-of-hooks": "error",
+    
+    // General code quality rules
+    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "no-debugger": "error",
+    "no-alert": "warn",
+    "prefer-const": "error",
+    "no-var": "error",
+    "eqeqeq": ["error", "always"],
+    "curly": ["error", "all"],
+    
+    // Security rules
+    "no-eval": "error",
+    "no-implied-eval": "error",
+    "no-new-func": "error",
+    "no-script-url": "error",
+    
+    // Testing rules
+    "jest/no-disabled-tests": "warn",
+    "jest/no-focused-tests": "error",
+    "jest/no-identical-title": "error",
+    "jest/prefer-to-have-length": "warn",
+    "jest/valid-expect": "error",
+    "testing-library/await-async-queries": "error",
+    "testing-library/no-await-sync-queries": "error",
+    "testing-library/no-debugging-utils": "warn",
+    "testing-library/no-dom-import": "error",
+    
+    // Import/Export rules
+    "import/no-default-export": "off",
+    "import/prefer-default-export": "off",
+    
+    // Performance rules
+    "no-unused-expressions": "error",
+    "no-unreachable": "error",
+    "no-duplicate-imports": "error"
+  },
+  "overrides": [
+    {
+      "files": ["**/__tests__/**/*", "**/*.{test,spec}.*"],
+      "env": {
+        "jest": true
+      },
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off",
+        "no-console": "off"
+      }
+    },
+    {
+      "files": ["src/app/**/page.tsx", "src/app/**/layout.tsx"],
+      "rules": {
+        "import/no-default-export": "off"
+      }
+    },
+    {
+      "files": ["jest.config.js", "jest.setup.js", "next.config.*"],
+      "env": {
+        "node": true
+      },
+      "rules": {
+        "@typescript-eslint/no-var-requires": "off"
+      }
+    }
+  ],
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  },
+  "ignorePatterns": [
+    ".next/",
+    "node_modules/",
+    "out/",
+    "build/",
+    "coverage/",
+    "*.config.js",
+    "public/"
+  ]
 }

@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({ data })
     } else if (quoteId) {
-      // Get contract for quote
+      // Get contract for specific quote
       const { data, error } = await supabase
         .from('contracts')
         .select('*')
@@ -31,14 +31,25 @@ export async function GET(request: NextRequest) {
         .single()
 
       if (error) {
-        console.error('Error fetching contract:', error)
+        console.error('Error fetching contract for quote:', error)
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+
+      return NextResponse.json({ data })
+    } else {
+      // Get all contracts (dashboard usage)
+      const { data, error } = await supabase
+        .from('contracts')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching all contracts:', error)
         return NextResponse.json({ error: error.message }, { status: 500 })
       }
 
       return NextResponse.json({ data })
     }
-
-    return NextResponse.json({ error: 'quote_id or contract_id required' }, { status: 400 })
   } catch (error) {
     console.error('API error fetching contracts:', error)
     return NextResponse.json({ error: 'Failed to fetch contracts' }, { status: 500 })

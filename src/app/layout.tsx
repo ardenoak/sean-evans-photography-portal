@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sean Evans Photography | Client Portal",
-  description: "Your personalized client portal for editorial portrait sessions",
+  title: "Tally Photography Management | Client Portal",
+  description: "Your personalized client portal for professional portrait sessions",
 };
 
 export default function RootLayout({

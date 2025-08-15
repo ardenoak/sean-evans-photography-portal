@@ -75,8 +75,8 @@ function ResetPasswordForm() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Image
-            src="/sean-evans-logo.png"
-            alt="Sean Evans Photography"
+            src="/tally-logo.png"
+            alt="Tally Photography Management"
             width={300}
             height={120}
             className="h-16 w-auto mx-auto mb-4"
@@ -157,7 +157,7 @@ function ResetPasswordForm() {
 
         <div className="mt-6 text-center">
           <p className="text-xs text-warm-gray">
-            Secure client portal for Sean Evans Photography
+            Secure client portal for Tally Photography Management
           </p>
         </div>
       </div>

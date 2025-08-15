@@ -26,7 +26,7 @@ SELECT
   '2:00 PM',
   'Downtown Studio & Waterfront Location',
   '2 Hours',
-  'Sean Evans',
+  'Professional Photographer',
   '$897',
   'Confirmed & Scheduled',
   '[
@@ -61,7 +61,7 @@ SELECT
   '10:00 AM',
   'Hampton Park & Rainbow Row',
   '2.5 Hours',
-  'Sean Evans',
+  'Professional Photographer',
   '$1,497',
   'Confirmed & Scheduled',
   '[

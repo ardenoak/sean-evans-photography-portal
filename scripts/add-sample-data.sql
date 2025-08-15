@@ -25,7 +25,7 @@ INSERT INTO sessions (
   '2:00 PM',
   'Downtown Studio & Waterfront Location',
   '2 Hours',
-  'Sean Evans',
+  'Professional Photographer',
   '$897',
   'Confirmed & Scheduled',
   '[

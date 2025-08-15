@@ -139,10 +139,10 @@ export async function GET(request: NextRequest) {
         })) || []
       },
       photographer: {
-        name: 'Sean Evans',
-        email: 'sean@seanevansphotography.com',
-        phone: session.photographer === 'Sean Evans' ? '+1 (555) 123-4567' : null,
-        specialty: 'Editorial Portraiture'
+        name: session.photographer || 'Your Photographer',
+        email: 'hello@tallyhq.io',
+        phone: session.photographer_phone || '+1 (555) 123-4567',
+        specialty: 'Professional Photography'
       },
       businessContext: {
         seasonalNote: getSeasonalNote(sessionDate),

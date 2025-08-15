@@ -178,8 +178,8 @@ export default function ProfilePage() {
               </button>
               <div className="h-8 w-px bg-warm-gray/30"></div>
               <Image
-                src="/sean-evans-logo.png"
-                alt="Sean Evans Photography"
+                src="/tally-logo.png"
+                alt="Tally Photography Management"
                 width={300}
                 height={120}
                 className="h-10 sm:h-14 w-auto cursor-pointer"

@@ -73,8 +73,8 @@ export default function SimpleDashboard() {
             <div className="flex items-center space-x-6">
               <div className="flex items-center justify-center">
                 <img
-                  src="/sean-evans-logo.png"
-                  alt="Sean Evans Photography"
+                  src="/tally-logo.png"
+                  alt="Tally Photography Management"
                   className="h-16 w-auto brightness-0 invert"
                 />
               </div>

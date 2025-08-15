@@ -98,7 +98,7 @@ async function createSampleData() {
           session_time: '10:00 AM',
           location: 'Studio A',
           duration: '2 hours',
-          photographer: 'Sean Evans',
+          photographer: process.env.PHOTOGRAPHER_NAME || 'Professional Photographer',
           investment: '$1,200',
           status: 'Confirmed & Scheduled'
         },
@@ -110,7 +110,7 @@ async function createSampleData() {
           session_time: '2:00 PM',
           location: 'Central Park',
           duration: '3 hours',
-          photographer: 'Sean Evans',
+          photographer: process.env.PHOTOGRAPHER_NAME || 'Professional Photographer',
           investment: '$1,800',
           status: 'Confirmed & Scheduled'
         },
@@ -122,7 +122,7 @@ async function createSampleData() {
           session_time: '6:00 PM',
           location: 'Downtown Office',
           duration: '4 hours',
-          photographer: 'Sean Evans',
+          photographer: process.env.PHOTOGRAPHER_NAME || 'Professional Photographer',
           investment: '$2,500',
           status: 'Completed'
         }

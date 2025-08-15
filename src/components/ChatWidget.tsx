@@ -46,9 +46,9 @@ export default function ChatWidget({ isOpen, onClose, clientName, sessionId }: C
   const getAIResponse = (message: string, type?: string): string => {
     const responses = {
       wardrobe: `For your editorial portrait session, I recommend wearing solid colors that complement your skin tone. Avoid busy patterns, logos, or bright whites. Consider bringing 2-3 outfit options - one formal, one casual, and perhaps something that reflects your personality. Your style guide has specific recommendations based on your session location and goals!`,
-      reschedule: `I understand things come up! To reschedule your session, please contact Sean directly at least 48 hours before your session date. We can usually accommodate date changes based on availability. Would you like me to provide his contact information?`,
-      weather: `Great question! We monitor weather closely leading up to your session. For outdoor sessions, we have backup indoor locations ready. Light rain can actually create beautiful, moody portraits! Sean will contact you the day before if any weather adjustments are needed.`,
-      participants: `Adding family members is wonderful! Additional participants may adjust your session investment. Please let Sean know at least one week before your session so we can plan appropriate timing and locations. Would you like me to help you contact him about this?`,
+      reschedule: `I understand things come up! To reschedule your session, please contact your photographer directly at least 48 hours before your session date. We can usually accommodate date changes based on availability. Would you like me to provide their contact information?`,
+      weather: `Great question! We monitor weather closely leading up to your session. For outdoor sessions, we have backup indoor locations ready. Light rain can actually create beautiful, moody portraits! Your photographer will contact you the day before if any weather adjustments are needed.`,
+      participants: `Adding family members is wonderful! Additional participants may adjust your session investment. Please let your photographer know at least one week before your session so we can plan appropriate timing and locations. Would you like me to help you contact them about this?`,
       default: `I'm here to help with any questions about your upcoming session! I can assist with wardrobe advice, rescheduling, weather concerns, location details, or adding participants. What specific aspect of your session would you like to know more about?`
     };
 

@@ -33,12 +33,13 @@ export default function Logo({
 
   return (
     <Image 
-      src="/sean-evans-logo.png" 
-      alt="Sean Evans Photography" 
+      src="/tally-logo.png" 
+      alt="Tally Photography Management" 
       width={width} 
       height={height}
       className={`${className}`}
       style={logoStyle}
+      unoptimized={true}
     />
   );
 }

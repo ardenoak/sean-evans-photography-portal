@@ -125,15 +125,15 @@ export default function QuotePage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-6">
               <Image 
-                src="/sean-evans-logo.png" 
-                alt="Sean Evans Photography" 
+                src="/tally-logo.png" 
+                alt="Tally Photography Management" 
                 width={120} 
                 height={40}
                 className="opacity-90"
               />
               <div className="border-l border-white/20 pl-6">
                 <h1 className="text-3xl font-light tracking-wide mb-2">Quote {quote.quote_number}</h1>
-                <p className="text-white/70 font-light">Sean Evans Photography</p>
+                <p className="text-white/70 font-light">Tally Photography Management</p>
               </div>
             </div>
             <div className="text-right">

@@ -147,7 +147,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({ data })
     } else if (leadId) {
-      // Get quotes for lead
+      // Get quotes for specific lead
       const { data, error } = await supabase
         .from('quotes')
         .select('*')
@@ -155,14 +155,25 @@ export async function GET(request: NextRequest) {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error fetching quotes:', error)
+        console.error('Error fetching quotes for lead:', error)
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+
+      return NextResponse.json({ data })
+    } else {
+      // Get all quotes (dashboard usage)
+      const { data, error } = await supabase
+        .from('quotes')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching all quotes:', error)
         return NextResponse.json({ error: error.message }, { status: 500 })
       }
 
       return NextResponse.json({ data })
     }
-
-    return NextResponse.json({ error: 'lead_id or quote_id required' }, { status: 400 })
   } catch (error) {
     console.error('API error fetching quotes:', error)
     return NextResponse.json({ error: 'Failed to fetch quotes' }, { status: 500 })

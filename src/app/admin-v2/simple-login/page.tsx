@@ -86,8 +86,8 @@ export default function SimpleLoginPage() {
         <div className="text-center mb-12">
           <div className="flex items-center justify-center mx-auto mb-8">
             <img
-              src="/sean-evans-logo.png"
-              alt="Sean Evans Photography"
+              src="/tally-logo.png"
+              alt="Tally Photography Management"
               className="h-20 w-auto brightness-0 invert"
             />
           </div>

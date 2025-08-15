@@ -127,8 +127,8 @@ export default function ContactPage() {
         <div className="max-w-lg w-full text-center bg-white rounded-2xl shadow-xl border border-warm-gray/20 p-8">
           <div className="mb-6">
             <Image
-              src="/sean-evans-logo.png"
-              alt="Sean Evans Photography"
+              src="/tally-logo.png"
+              alt="Tally Photography Management"
               width={200}
               height={80}
               className="h-16 w-auto mx-auto mb-6"
@@ -164,8 +164,8 @@ export default function ContactPage() {
         <div className="text-center mb-12">
           <div className="mb-8">
             <Image
-              src="/sean-evans-logo.png"
-              alt="Sean Evans Photography"
+              src="/tally-logo.png"
+              alt="Tally Photography Management"
               width={300}
               height={120}
               className="h-20 md:h-24 w-auto mx-auto mb-6"

@@ -1,0 +1,415 @@
+{
+  "tally_cms_integration_examples": {
+    "version": "1.0",
+    "description": "Sample API payloads and responses for Tally CMS integration",
+    "development_url": "http://localhost:3004",
+    "production_url": "https://tallyhq.io",
+    
+    "create_lead": {
+      "endpoint": "POST /api/leads",
+      "description": "Create a new lead in Tally system",
+      
+      "headers": {
+        "development": {
+          "Content-Type": "application/json"
+        },
+        "production": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer YOUR_API_KEY"
+        }
+      },
+      
+      "sample_requests": {
+        "minimal_lead": {
+          "description": "Minimum required fields only",
+          "payload": {
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": "john.doe@example.com"
+          }
+        },
+        
+        "complete_lead": {
+          "description": "All fields populated for comprehensive lead capture",
+          "payload": {
+            "first_name": "Sarah",
+            "last_name": "Johnson",
+            "email": "sarah.johnson@example.com",
+            "phone": "(555) 123-4567",
+            "session_type_interest": "Branding Session",
+            "budget_range": "$2,500 - $5,000",
+            "preferred_timeline": "1-3 months",
+            "preferred_time": "Morning",
+            "preferred_session_date": "2025-09-15",
+            "lead_source": "Website",
+            "message": "I'm interested in professional branding photos for my consulting business. I'd like to discuss creative concepts that align with my brand aesthetic. I'm flexible on location and open to both studio and outdoor settings."
+          }
+        },
+        
+        "wedding_lead": {
+          "description": "Wedding photography inquiry example",
+          "payload": {
+            "first_name": "Emily",
+            "last_name": "Chen",
+            "email": "emily.chen@gmail.com",
+            "phone": "(555) 987-6543",
+            "session_type_interest": "Wedding",
+            "budget_range": "$5,000 - $7,500",
+            "preferred_timeline": "3-6 months",
+            "preferred_time": "All day",
+            "preferred_session_date": "2025-11-22",
+            "lead_source": "Instagram",
+            "message": "We're getting married next November and love your portfolio! We're looking for someone to capture our special day with a natural, candid style. Our venue is outdoors with a rustic theme."
+          }
+        },
+        
+        "corporate_lead": {
+          "description": "Corporate headshots inquiry",
+          "payload": {
+            "first_name": "Michael",
+            "last_name": "Rodriguez",
+            "email": "m.rodriguez@techcorp.com",
+            "phone": "(555) 456-7890",
+            "session_type_interest": "Headshots",
+            "budget_range": "$1,000 - $2,500",
+            "preferred_timeline": "Within 1 month",
+            "preferred_time": "Afternoon",
+            "preferred_session_date": "2025-09-05",
+            "lead_source": "Referral",
+            "message": "We need professional headshots for our executive team. Looking for clean, professional style that works well for LinkedIn and our website. Team of 8 people."
+          }
+        },
+        
+        "exploring_lead": {
+          "description": "Potential client just exploring options",
+          "payload": {
+            "first_name": "Amanda",
+            "last_name": "Williams",
+            "email": "amanda.w@example.com",
+            "phone": null,
+            "session_type_interest": "Creative Portrait",
+            "budget_range": "Let's discuss",
+            "preferred_timeline": "Just exploring",
+            "preferred_time": null,
+            "preferred_session_date": null,
+            "lead_source": "Website",
+            "message": "I'm considering a creative portrait session and browsing photographers. I love your artistic style and would like to learn more about your process and pricing."
+          }
+        }
+      },
+      
+      "success_responses": {
+        "created_lead": {
+          "status": 201,
+          "description": "Lead successfully created",
+          "response": {
+            "data": [
+              {
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "first_name": "Sarah",
+                "last_name": "Johnson",
+                "email": "sarah.johnson@example.com",
+                "phone": "(555) 123-4567",
+                "session_type_interest": "Branding Session",
+                "budget_range": "$2,500 - $5,000",
+                "preferred_timeline": "1-3 months",
+                "preferred_time": "Morning",
+                "preferred_session_date": "2025-09-15",
+                "lead_source": "Website",
+                "status": "new",
+                "message": "I'm interested in professional branding photos for my consulting business...",
+                "notes": null,
+                "created_at": "2025-08-15T10:30:00.000Z",
+                "updated_at": "2025-08-15T10:30:00.000Z",
+                "last_contacted": null,
+                "next_follow_up": null,
+                "last_viewed_at": null
+              }
+            ]
+          }
+        }
+      },
+      
+      "error_responses": {
+        "missing_required_field": {
+          "status": 400,
+          "description": "Required field missing",
+          "response": {
+            "error": "Missing required field: email"
+          }
+        },
+        
+        "invalid_email": {
+          "status": 400,
+          "description": "Invalid email format",
+          "response": {
+            "error": "Invalid email format"
+          }
+        },
+        
+        "database_error": {
+          "status": 500,
+          "description": "Internal server error",
+          "response": {
+            "error": "Failed to create lead"
+          }
+        }
+      }
+    },
+    
+    "get_leads": {
+      "endpoint": "GET /api/leads",
+      "description": "Retrieve all leads (for verification/testing)",
+      
+      "success_response": {
+        "status": 200,
+        "response": {
+          "data": [
+            {
+              "id": "550e8400-e29b-41d4-a716-446655440000",
+              "first_name": "Sarah",
+              "last_name": "Johnson",
+              "email": "sarah.johnson@example.com",
+              "phone": "(555) 123-4567",
+              "session_type_interest": "Branding Session",
+              "budget_range": "$2,500 - $5,000",
+              "preferred_timeline": "1-3 months",
+              "preferred_time": "Morning",
+              "preferred_session_date": "2025-09-15",
+              "lead_source": "Website",
+              "status": "new",
+              "message": "I'm interested in professional branding photos...",
+              "notes": null,
+              "created_at": "2025-08-15T10:30:00.000Z",
+              "updated_at": "2025-08-15T10:30:00.000Z",
+              "last_contacted": null,
+              "next_follow_up": null,
+              "last_viewed_at": null
+            }
+          ]
+        }
+      }
+    },
+    
+    "convert_lead_to_session": {
+      "endpoint": "POST /api/convert-lead-to-session",
+      "description": "Convert a lead to a client and session",
+      
+      "request": {
+        "payload": {
+          "leadId": "550e8400-e29b-41d4-a716-446655440000"
+        }
+      },
+      
+      "success_response": {
+        "status": 200,
+        "response": {
+          "success": true,
+          "message": "Lead successfully converted to session",
+          "data": {
+            "clientId": "client-uuid-here",
+            "sessionId": "session-uuid-here",
+            "sessionTitle": "Branding Session - Sarah Johnson",
+            "sessionStatus": "Confirmed & Scheduled"
+          }
+        }
+      }
+    },
+    
+    "field_validation": {
+      "description": "Field validation rules and examples",
+      
+      "required_fields": {
+        "first_name": {
+          "type": "string",
+          "max_length": 100,
+          "validation": "Non-empty string",
+          "examples": ["Sarah", "John", "María"]
+        },
+        
+        "last_name": {
+          "type": "string", 
+          "max_length": 100,
+          "validation": "Non-empty string",
+          "examples": ["Johnson", "Smith", "García"]
+        },
+        
+        "email": {
+          "type": "string",
+          "max_length": 255,
+          "validation": "Valid email format",
+          "examples": ["user@example.com", "test.email@domain.co.uk"]
+        }
+      },
+      
+      "optional_fields": {
+        "phone": {
+          "type": "string",
+          "max_length": 20,
+          "validation": "Phone number format",
+          "examples": ["(555) 123-4567", "+1-555-123-4567", "555.123.4567"]
+        },
+        
+        "session_type_interest": {
+          "type": "string",
+          "allowed_values": [
+            "Editorial Portrait",
+            "Branding Session",
+            "Headshots", 
+            "Creative Portrait",
+            "Wedding",
+            "Event",
+            "Portraiture Session",
+            "Commercial Session",
+            "Fashion Session"
+          ]
+        },
+        
+        "budget_range": {
+          "type": "string",
+          "allowed_values": [
+            "$500 - $1,000",
+            "$1,000 - $2,500",
+            "$2,500 - $5,000", 
+            "$5,000 - $7,500",
+            "Let's discuss"
+          ]
+        },
+        
+        "preferred_timeline": {
+          "type": "string",
+          "allowed_values": [
+            "Within 2 weeks",
+            "Within 1 month",
+            "1-3 months",
+            "3-6 months",
+            "6+ months", 
+            "Just exploring"
+          ]
+        },
+        
+        "preferred_time": {
+          "type": "string",
+          "examples": ["Morning", "Afternoon", "Evening", "All day"],
+          "validation": "Free text"
+        },
+        
+        "preferred_session_date": {
+          "type": "string",
+          "format": "ISO 8601 date (YYYY-MM-DD)",
+          "validation": "Valid date format",
+          "examples": ["2025-09-15", "2025-12-31"]
+        },
+        
+        "lead_source": {
+          "type": "string",
+          "allowed_values": [
+            "Website",
+            "Instagram", 
+            "Referral",
+            "Email",
+            "Phone Call",
+            "Wedding Wire",
+            "Manual Entry",
+            "Other"
+          ]
+        },
+        
+        "message": {
+          "type": "text",
+          "max_length": 1000,
+          "validation": "Free text, client inquiry details",
+          "examples": [
+            "I'm interested in professional branding photos...",
+            "Looking for wedding photography for November...",
+            "Need headshots for our executive team..."
+          ]
+        }
+      }
+    },
+    
+    "curl_examples": {
+      "description": "Command line testing examples",
+      
+      "development": {
+        "create_minimal_lead": {
+          "command": "curl -X POST http://localhost:3004/api/leads -H \"Content-Type: application/json\" -d '{\"first_name\": \"Test\", \"last_name\": \"User\", \"email\": \"test@example.com\"}'"
+        },
+        
+        "create_complete_lead": {
+          "command": "curl -X POST http://localhost:3004/api/leads -H \"Content-Type: application/json\" -d '{\"first_name\": \"Sarah\", \"last_name\": \"Johnson\", \"email\": \"sarah@example.com\", \"phone\": \"(555) 123-4567\", \"session_type_interest\": \"Branding Session\", \"budget_range\": \"$2,500 - $5,000\", \"preferred_timeline\": \"1-3 months\", \"lead_source\": \"Website\", \"message\": \"Test lead from CMS integration\"}'"
+        },
+        
+        "get_all_leads": {
+          "command": "curl -X GET http://localhost:3004/api/leads"
+        }
+      },
+      
+      "production": {
+        "create_minimal_lead": {
+          "command": "curl -X POST https://tallyhq.io/api/leads -H \"Content-Type: application/json\" -H \"Authorization: Bearer YOUR_API_KEY\" -d '{\"first_name\": \"Test\", \"last_name\": \"User\", \"email\": \"test@example.com\"}'"
+        },
+        
+        "create_complete_lead": {
+          "command": "curl -X POST https://tallyhq.io/api/leads -H \"Content-Type: application/json\" -H \"Authorization: Bearer YOUR_API_KEY\" -d '{\"first_name\": \"Sarah\", \"last_name\": \"Johnson\", \"email\": \"sarah@example.com\", \"phone\": \"(555) 123-4567\", \"session_type_interest\": \"Branding Session\", \"budget_range\": \"$2,500 - $5,000\", \"preferred_timeline\": \"1-3 months\", \"lead_source\": \"Website\", \"message\": \"Test lead from CMS integration\"}'"
+        },
+        
+        "get_all_leads": {
+          "command": "curl -X GET https://tallyhq.io/api/leads -H \"Authorization: Bearer YOUR_API_KEY\""
+        }
+      }
+    },
+    
+    "integration_testing": {
+      "description": "Step-by-step testing procedures",
+      
+      "test_scenarios": [
+        {
+          "name": "Minimal Lead Creation",
+          "description": "Test with only required fields",
+          "steps": [
+            "Send POST request with first_name, last_name, email only",
+            "Verify 201 status response",
+            "Check lead appears in Tally dashboard",
+            "Confirm status is 'new'"
+          ]
+        },
+        
+        {
+          "name": "Complete Lead Creation", 
+          "description": "Test with all fields populated",
+          "steps": [
+            "Send POST request with all optional fields",
+            "Verify 201 status response", 
+            "Check all fields saved correctly in Tally",
+            "Verify proper field formatting"
+          ]
+        },
+        
+        {
+          "name": "Validation Testing",
+          "description": "Test field validation",
+          "steps": [
+            "Send request missing required field", 
+            "Verify 400 error response",
+            "Send request with invalid email",
+            "Verify validation error response"
+          ]
+        },
+        
+        {
+          "name": "Lead Conversion Testing",
+          "description": "Test full workflow",
+          "steps": [
+            "Create lead via API",
+            "Access Tally dashboard at http://localhost:3004/leads",
+            "Click on created lead",
+            "Click 'Convert to Session' button",
+            "Verify session created in Sessions area",
+            "Test portal access via 'View Portal' button"
+          ]
+        }
+      ]
+    }
+  }
+}

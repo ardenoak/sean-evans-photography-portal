@@ -51,7 +51,7 @@ export async function POST(
         status: 'pending',
         terms: `PHOTOGRAPHY SESSION CONTRACT
 
-This agreement is between Sean Evans Photography (the "Photographer") and the client named in the associated quote (the "Client").
+This agreement is between ${process.env.PHOTOGRAPHER_BUSINESS_NAME || 'Professional Photography Services'} (the "Photographer") and the client named in the associated quote (the "Client").
 
 SESSION DETAILS:
 - Package: As specified in Quote #${quote.quote_number}
@@ -60,7 +60,7 @@ SESSION DETAILS:
 
 SESSION TERMS:
 1. The Photographer will provide professional photography services as outlined in the package
-2. All images remain the property of Sean Evans Photography with shared usage rights granted to Client
+2. All images remain the property of ${process.env.PHOTOGRAPHER_BUSINESS_NAME || 'Professional Photography Services'} with shared usage rights granted to Client
 3. Client receives personal usage rights for social media and personal use
 4. Commercial usage requires separate licensing agreement
 
