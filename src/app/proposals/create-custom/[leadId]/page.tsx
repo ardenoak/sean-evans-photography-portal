@@ -272,7 +272,7 @@ export default function CustomProposalBuilder() {
         <div className="text-center">
           <div className="text-red-600 text-xl mb-4">Lead not found</div>
           <button 
-            onClick={() => router.push('/tally/leads')}
+            onClick={() => router.push('/leads')}
             className="px-6 py-3 bg-charcoal text-white font-light tracking-wide uppercase hover:bg-charcoal/90 transition-all duration-300"
           >
             Back to Leads
@@ -293,7 +293,7 @@ export default function CustomProposalBuilder() {
         <div className="max-w-6xl mx-auto px-6 py-8">
           <div className="flex items-center space-x-6">
             <button
-              onClick={() => router.push('/tally/leads')}
+              onClick={() => router.push('/leads')}
               className="text-charcoal/60 hover:text-charcoal transition-colors text-lg"
             >
               ←
@@ -497,7 +497,7 @@ export default function CustomProposalBuilder() {
             </button>
             
             <button
-              onClick={() => router.push('/tally/leads')}
+              onClick={() => router.push('/leads')}
               className="border border-charcoal/30 text-charcoal py-4 px-8 text-sm font-light tracking-wide uppercase hover:border-charcoal hover:bg-charcoal hover:text-white transition-all duration-300"
             >
               Cancel

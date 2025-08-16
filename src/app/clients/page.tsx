@@ -313,7 +313,7 @@ export default function AdminClientsPage() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push(`/tally/clients/${client.id}`);
+                          router.push(`/clients/${client.id}`);
                         }}
                         className="text-sm text-charcoal/60 hover:text-charcoal transition-colors"
                       >

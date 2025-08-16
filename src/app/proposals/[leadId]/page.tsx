@@ -233,7 +233,7 @@ export default function ProposalPage() {
             Please check the browser console for debugging information, or verify this lead exists in the admin panel.
           </div>
           <button
-            onClick={() => router.push('/tally/leads')}
+            onClick={() => router.push('/leads')}
             className="mt-4 px-4 py-2 bg-gold text-white rounded hover:bg-gold/90 transition-colors"
           >
             Back to Leads
@@ -580,7 +580,7 @@ export default function ProposalPage() {
                   Reserve Experience
                 </button>
                 <button 
-                  onClick={() => router.push('/tally/leads')}
+                  onClick={() => router.push('/leads')}
                   className="flex-1 border border-charcoal/30 text-charcoal py-4 px-8 text-sm font-light tracking-wide uppercase hover:border-charcoal hover:bg-charcoal hover:text-white transition-all duration-300"
                 >
                   Return

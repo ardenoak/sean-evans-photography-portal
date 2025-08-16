@@ -209,7 +209,7 @@ export default function CreateProposalPage() {
       if (packagesError) throw packagesError;
 
       // Redirect back to leads with success
-      router.push('/tally/leads?proposal_created=true');
+      router.push('/leads?proposal_created=true');
     } catch (error) {
       console.error('Error saving proposal:', error);
     } finally {
@@ -241,7 +241,7 @@ export default function CreateProposalPage() {
         <div className="text-center">
           <div className="text-red-600 text-xl mb-4">Lead not found</div>
           <button 
-            onClick={() => router.push('/tally/leads')}
+            onClick={() => router.push('/leads')}
             className="px-6 py-3 bg-charcoal text-white font-light tracking-wide uppercase hover:bg-charcoal/90 transition-all duration-300"
           >
             Back to Leads
@@ -273,13 +273,13 @@ export default function CreateProposalPage() {
             </div>
             <div className="flex space-x-4 justify-center">
               <button 
-                onClick={() => router.push('/tally/leads')}
+                onClick={() => router.push('/leads')}
                 className="px-6 py-3 bg-charcoal text-white font-light tracking-wide uppercase hover:bg-charcoal/90 transition-all duration-300"
               >
                 Back to Leads
               </button>
               <button 
-                onClick={() => router.push('/tally/db-status')}
+                onClick={() => router.push('/db-status')}
                 className="px-6 py-3 border border-charcoal/30 text-charcoal font-light tracking-wide uppercase hover:bg-charcoal hover:text-white transition-all duration-300"
               >
                 Check Database Status
@@ -494,7 +494,7 @@ export default function CreateProposalPage() {
                       {saving ? 'Creating Proposal...' : 'Create Proposal'}
                     </button>
                     <button
-                      onClick={() => router.push('/tally/leads')}
+                      onClick={() => router.push('/leads')}
                       className="w-full py-4 px-6 border border-charcoal/30 text-charcoal text-sm font-light tracking-wide uppercase hover:bg-charcoal hover:text-white transition-all duration-300"
                     >
                       Cancel

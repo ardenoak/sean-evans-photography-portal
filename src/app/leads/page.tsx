@@ -1158,7 +1158,7 @@ The lead status has been updated to "converted" and you can now access the clien
                           onClick={() => {
                             // Store lead ID in session storage for the Experience Builder
                             sessionStorage.setItem('leadId', selectedLead.id);
-                            router.push('/tally/packages');
+                            router.push('/packages');
                           }}
                           className="px-6 py-3 border border-charcoal text-charcoal font-light tracking-wide uppercase hover:bg-charcoal hover:text-white transition-all duration-300"
                         >
@@ -1463,7 +1463,7 @@ The lead status has been updated to "converted" and you can now access the clien
                         <span>Standard EX</span>
                       </button>
                       <button 
-                        onClick={() => router.push(`/tally/proposals/create-custom/${selectedLead.id}`)}
+                        onClick={() => router.push(`/proposals/create-custom/${selectedLead.id}`)}
                         className="border border-charcoal text-charcoal px-4 py-2 text-sm font-light tracking-wide uppercase hover:bg-charcoal hover:text-white transition-all duration-300 flex items-center space-x-2"
                       >
                         <span>🛠️</span>
@@ -1973,7 +1973,7 @@ The lead status has been updated to "converted" and you can now access the clien
                     <button
                       onClick={() => {
                         setShowStandardExModal(false);
-                        router.push('/tally/packages');
+                        router.push('/packages');
                       }}
                       className="px-6 py-3 bg-charcoal text-white font-light tracking-wide uppercase hover:bg-charcoal/90 transition-all duration-300"
                     >

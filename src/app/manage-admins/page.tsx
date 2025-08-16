@@ -134,7 +134,7 @@ export default function ManageAdminsPage() {
       } else {
         // Send invitation email via n8n
         try {
-          const invitationUrl = `${window.location.origin}/tally/accept-invitation?token=${invitationToken}`;
+          const invitationUrl = `${window.location.origin}/accept-invitation?token=${invitationToken}`;
           
           const emailData = {
             type: 'admin_invitation',
@@ -275,7 +275,7 @@ export default function ManageAdminsPage() {
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-3">
               <button
-                onClick={() => router.push('/tally/dashboard')}
+                onClick={() => router.push('/dashboard')}
                 className="text-warm-gray hover:text-charcoal transition-colors"
               >
                 ←

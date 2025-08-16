@@ -81,7 +81,7 @@ export default function AdminSessionDetailPage() {
 
       if (sessionError) {
         console.error('Error loading session:', sessionError);
-        router.push('/tally/sessions');
+        router.push('/sessions');
         return;
       }
 
@@ -106,7 +106,7 @@ export default function AdminSessionDetailPage() {
 
     } catch (error) {
       console.error('Error loading session detail:', error);
-      router.push('/tally/sessions');
+      router.push('/sessions');
     } finally {
       setLoading(false);
     }
@@ -204,7 +204,7 @@ export default function AdminSessionDetailPage() {
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => router.push('/tally/sessions')}
+                onClick={() => router.push('/sessions')}
                 className="text-warm-gray hover:text-charcoal transition-colors flex items-center space-x-2 group"
               >
                 <span className="text-lg group-hover:scale-110 transition-transform">←</span>
@@ -217,7 +217,7 @@ export default function AdminSessionDetailPage() {
                 width={300}
                 height={120}
                 className="h-10 sm:h-14 w-auto cursor-pointer"
-                onClick={() => router.push('/tally/dashboard')}
+                onClick={() => router.push('/dashboard')}
                 priority
               />
               <div className="h-8 w-px bg-warm-gray/30"></div>
@@ -245,14 +245,14 @@ export default function AdminSessionDetailPage() {
       <div className="max-w-7xl mx-auto px-8 pt-6 pb-2">
         <div className="flex items-center text-sm text-warm-gray space-x-2">
           <button 
-            onClick={() => router.push('/tally/dashboard')}
+            onClick={() => router.push('/dashboard')}
             className="hover:text-charcoal transition-colors"
           >
             Admin Dashboard
           </button>
           <span>/</span>
           <button 
-            onClick={() => router.push('/tally/sessions')}
+            onClick={() => router.push('/sessions')}
             className="hover:text-charcoal transition-colors"
           >
             Sessions
@@ -309,7 +309,7 @@ export default function AdminSessionDetailPage() {
 
                 <div className="flex items-center space-x-4">
                   <button
-                    onClick={() => router.push(`/tally/sessions/${sessionId}/edit`)}
+                    onClick={() => router.push(`/sessions/${sessionId}/edit`)}
                     className="bg-gold text-white px-4 py-2 rounded-lg hover:bg-gold/90 transition-colors"
                   >
                     Edit Session
@@ -443,7 +443,7 @@ export default function AdminSessionDetailPage() {
 
                 <div className="pt-4 border-t border-warm-gray/20">
                   <button
-                    onClick={() => router.push(`/tally/clients/${session.client_id}`)}
+                    onClick={() => router.push(`/clients/${session.client_id}`)}
                     className="w-full bg-ivory text-charcoal py-2 px-4 rounded-lg hover:bg-gold hover:text-white transition-colors text-sm"
                   >
                     View Full Client Profile
