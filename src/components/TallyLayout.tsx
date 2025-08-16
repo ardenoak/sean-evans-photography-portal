@@ -276,7 +276,7 @@ export default function TallyLayout({
   
   // Enhanced Mobile Bottom Navigation with Optimized Touch Targets
   const EnhancedMobileNav = () => (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50">
+    <div className="lg:hidden mobile-nav-container mobile-nav-fixed">
       <div className="bg-white/96 backdrop-blur-luxury-md border-t border-warm-gray/12 shadow-luxury-lg">
         <div className="grid grid-cols-5 gap-0.5 px-1 py-2">
           {navigation.map((item) => {
@@ -287,13 +287,17 @@ export default function TallyLayout({
                 onClick={() => {
                   router.push(item.href);
                 }}
-                className={`flex flex-col items-center justify-center py-2.5 px-1 min-h-[68px] min-w-[68px] rounded-luxury-lg transition-all duration-luxury transform ${
+                className={`flex flex-col items-center justify-center py-2.5 px-1 min-h-[68px] min-w-[68px] rounded-luxury-lg transition-all duration-luxury transform touch-manipulation ${
                   isActive
                     ? 'text-verde bg-verde/12 shadow-luxury-sm scale-105 border border-verde/20'
                     : 'text-warm-gray active:text-verde active:bg-verde/8 active:scale-95 hover:bg-verde/5'
                 }`}
                 aria-label={`Navigate to ${item.name}`}
                 title={item.description}
+                style={{ 
+                  WebkitTapHighlightColor: 'transparent',
+                  WebkitTouchCallout: 'none'
+                }}
               >
                 <span className={`mb-1.5 transition-all duration-luxury ${
                   isActive ? 'scale-110 opacity-100' : 'scale-100 opacity-80 active:scale-90'
@@ -362,7 +366,7 @@ export default function TallyLayout({
           <div className="fixed top-4 right-4 bg-black/80 text-white p-4 rounded-lg text-xs z-50 max-w-xs">
             <h4 className="font-medium mb-2">🚀 Feature Flags Status</h4>
             <div className="space-y-1">
-              <div>Enhanced Navigation: {useEnhancedNavigation ? '✅' : '❌'}</div>
+              <div>Enhanced Navigation: ✅</div>
               <div>Enhanced Search: {enhancedSearchEnabled ? '✅' : '❌'}</div>
               <div>Dashboard Analytics: {dashboardAnalyticsEnabled ? '✅' : '❌'}</div>
               <div>Debug Mode: {debugModeEnabled ? '✅' : '❌'}</div>
