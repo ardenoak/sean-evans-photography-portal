@@ -64,15 +64,26 @@ export default function AdminSessionsPage() {
 
   const loadSessions = async () => {
     try {
+      const apiKey = process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c';
+      console.log('🔑 [SESSIONS] Using API Key:', apiKey ? 'Key present' : 'No key found');
+      console.log('🌍 [SESSIONS] Environment:', process.env.NODE_ENV);
+      
       const response = await fetch('/api/sessions', {
         headers: {
-          'X-API-Key': process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c'
+          'X-API-Key': apiKey
         }
       });
       const result = await response.json();
+      console.log('📅 [SESSIONS] API result:', result);
+      console.log('📡 [SESSIONS] Response status:', response.status, response.statusText);
 
       if (!response.ok) {
-        console.error('Error loading sessions:', result.error);
+        console.error('❌ [SESSIONS] Error response:', result.error);
+        // Still try to set sessions data if it exists in the result
+        if (result.data) {
+          console.log('✅ [SESSIONS] Setting sessions data despite error status');
+          setSessions(result.data);
+        }
       } else {
         setSessions(result.data || []);
       }
@@ -85,15 +96,26 @@ export default function AdminSessionsPage() {
 
   const loadClients = async () => {
     try {
+      const apiKey = process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c';
+      console.log('🔑 [SESSIONS-CLIENTS] Using API Key:', apiKey ? 'Key present' : 'No key found');
+      console.log('🌍 [SESSIONS-CLIENTS] Environment:', process.env.NODE_ENV);
+      
       const response = await fetch('/api/clients', {
         headers: {
-          'X-API-Key': process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c'
+          'X-API-Key': apiKey
         }
       });
       const result = await response.json();
+      console.log('👥 [SESSIONS-CLIENTS] API result:', result);
+      console.log('📡 [SESSIONS-CLIENTS] Response status:', response.status, response.statusText);
 
       if (!response.ok) {
-        console.error('Error loading clients:', result.error);
+        console.error('❌ [SESSIONS-CLIENTS] Error response:', result.error);
+        // Still try to set clients data if it exists in the result
+        if (result.data) {
+          console.log('✅ [SESSIONS-CLIENTS] Setting clients data despite error status');
+          setClients(result.data);
+        }
       } else {
         setClients(result.data || []);
       }
@@ -104,21 +126,28 @@ export default function AdminSessionsPage() {
 
   const updateSessionStatus = async (sessionId: string, newStatus: string) => {
     try {
+      const apiKey = process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c';
+      console.log('🔑 [SESSION-UPDATE] Using API Key:', apiKey ? 'Key present' : 'No key found');
+      console.log('🌍 [SESSION-UPDATE] Environment:', process.env.NODE_ENV);
+      
       const response = await fetch('/api/sessions', {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
-          'X-API-Key': process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c'
+          'X-API-Key': apiKey
         },
         body: JSON.stringify({ id: sessionId, status: newStatus })
       });
 
       const result = await response.json();
+      console.log('📝 [SESSION-UPDATE] API result:', result);
+      console.log('📡 [SESSION-UPDATE] Response status:', response.status, response.statusText);
 
       if (!response.ok) {
-        console.error('Error updating session status:', result.error);
+        console.error('❌ [SESSION-UPDATE] Error response:', result.error);
         alert('Error updating session status');
       } else {
+        console.log('✅ [SESSION-UPDATE] Session status updated successfully');
         loadSessions();
       }
     } catch (error) {
@@ -184,21 +213,29 @@ export default function AdminSessionsPage() {
     setCreateLoading(true);
 
     try {
+      const apiKey = process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c';
+      console.log('🔑 [SESSION-CREATE] Using API Key:', apiKey ? 'Key present' : 'No key found');
+      console.log('🌍 [SESSION-CREATE] Environment:', process.env.NODE_ENV);
+      console.log('📅 [SESSION-CREATE] Session data:', newSession);
+      
       const response = await fetch('/api/sessions', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'X-API-Key': process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c'
+          'X-API-Key': apiKey
         },
         body: JSON.stringify(newSession)
       });
 
       const result = await response.json();
+      console.log('📝 [SESSION-CREATE] API result:', result);
+      console.log('📡 [SESSION-CREATE] Response status:', response.status, response.statusText);
 
       if (!response.ok) {
-        console.error('Error creating session:', result.error);
-        alert('Error creating session');
+        console.error('❌ [SESSION-CREATE] Error response:', result.error);
+        alert('Error creating session: ' + (result.error || 'Unknown error'));
       } else {
+        console.log('✅ [SESSION-CREATE] Session created successfully');
         setShowCreateModal(false);
         setNewSession({
           client_id: '',
