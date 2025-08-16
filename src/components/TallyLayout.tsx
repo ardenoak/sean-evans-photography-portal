@@ -1,8 +1,7 @@
 'use client';
 import { useRouter, usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import React from 'react';
 import Logo from '@/components/Logo';
-import { useLuxuryTokens } from '@/components/design-system/foundations/useLuxuryTokens';
 import { useFeatureFlag } from '@/hooks/useFeatureFlags';
 
 interface NavItem {
@@ -204,13 +203,7 @@ export default function TallyLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const { tokens } = useLuxuryTokens();
   
-  // Enhanced Navigation is now the permanent default - no feature flag needed
-  const useEnhancedNavigation = true;
-  const trackInteraction = () => {}; // Placeholder for analytics
   
   // Additional feature flags for navigation enhancements
   const enhancedSearchEnabled = useFeatureFlag('enhancedSearch');
@@ -220,21 +213,7 @@ export default function TallyLayout({
   // Get navigation items based on feature flags
   const navigation = getNavigationItems(dashboardAnalyticsEnabled, enhancedSearchEnabled);
   
-  // Enhanced Navigation is permanently enabled - analytics placeholder
-  useEffect(() => {
-    trackInteraction();
-  }, []);
   
-  // Responsive detection
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   const isCurrentPath = (href: string) => {
     if (href === '/dashboard') {
@@ -290,16 +269,6 @@ export default function TallyLayout({
             </button>
           </div>
           
-          {/* Enhanced Mobile menu button */}
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="lg:hidden p-luxury-md text-warm-gray hover:text-verde transition-all duration-luxury hover:bg-verde/8 hover:scale-102 hover:shadow-luxury-sm rounded-luxury-lg min-w-[48px] min-h-[48px] flex items-center justify-center"
-            aria-label="Open navigation menu"
-          >
-            <svg className="w-6 h-6 transition-transform duration-luxury hover:scale-105" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-            </svg>
-          </button>
         </div>
       </div>
     </div>
@@ -317,7 +286,6 @@ export default function TallyLayout({
                 key={item.name}
                 onClick={() => {
                   router.push(item.href);
-                  setSidebarOpen(false);
                 }}
                 className={`flex flex-col items-center justify-center py-2.5 px-1 min-h-[68px] min-w-[68px] rounded-luxury-lg transition-all duration-luxury transform ${
                   isActive
@@ -381,88 +349,6 @@ export default function TallyLayout({
           </div>
         </div>
       
-      {/* Enhanced Mobile Sidebar Overlay */}
-      {sidebarOpen && (
-        <>
-          <div 
-            className="lg:hidden fixed inset-0 bg-black/50 z-40"
-            onClick={() => setSidebarOpen(false)}
-          />
-          <div className="lg:hidden fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-luxury-xl transform transition-transform duration-luxury">
-            <div className="flex flex-col h-full">
-              {/* Mobile Sidebar Header */}
-              <div className="flex items-center justify-between h-16 px-luxury-lg border-b border-warm-gray/10">
-                <Logo width={120} height={40} variant="light" className="opacity-95" />
-                <button
-                  onClick={() => setSidebarOpen(false)}
-                  className="p-luxury-sm text-warm-gray hover:text-charcoal transition-colors duration-luxury"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              {/* Enhanced Mobile Sidebar Navigation with Optimized Touch Targets */}
-              <nav className="flex-1 px-luxury-md py-luxury-lg space-y-luxury-xs overflow-y-auto">
-                {navigation.map((item) => {
-                  const isActive = isCurrentPath(item.href);
-                  return (
-                    <button
-                      key={item.name}
-                      onClick={() => {
-                        router.push(item.href);
-                        setSidebarOpen(false);
-                      }}
-                      className={`group flex items-center w-full px-luxury-md py-luxury-lg text-luxury-base font-medium tracking-wide rounded-luxury-xl transition-all duration-luxury min-h-[56px] ${
-                        isActive
-                          ? 'bg-verde/12 text-verde border-l-4 border-verde shadow-luxury-sm'
-                          : 'text-warm-gray hover:bg-verde/6 hover:text-verde hover:shadow-luxury-sm'
-                      }`}
-                      aria-label={`Navigate to ${item.name}`}
-                    >
-                      <span className={`mr-luxury-md text-current transition-transform duration-luxury ${
-                        isActive ? 'scale-110' : 'group-hover:scale-105'
-                      }`}>
-                        {NavigationIcons[item.iconKey]}
-                      </span>
-                      <div className="flex-1 text-left">
-                        <span className="font-luxury-sans block">{item.name}</span>
-                        {item.description && (
-                          <p className="text-luxury-xs text-warm-gray/70 mt-0.5 leading-relaxed">
-                            {item.description}
-                          </p>
-                        )}
-                        {/* Feature flag badge for mobile sidebar */}
-                        {item.featureFlag && (
-                          <span className="inline-block mt-1 px-2 py-0.5 bg-gold/15 text-gold text-luxury-xs font-medium rounded-full border border-gold/25">
-                            Enhanced
-                          </span>
-                        )}
-                      </div>
-                      
-                      {/* Hover effect enhancement */}
-                      <div className="absolute inset-0 rounded-luxury-xl bg-gradient-to-br from-verde/6 via-transparent to-gold/4 opacity-0 group-hover:opacity-100 transition-opacity duration-luxury" />
-                    </button>
-                  );
-                })}
-              </nav>
-              
-              {/* Mobile Sidebar Footer */}
-              <div className="p-luxury-lg border-t border-warm-gray/10">
-                <div className="text-center">
-                  <p className="text-luxury-sm text-warm-gray font-medium tracking-wide mb-1">
-                    Tally Photography
-                  </p>
-                  <p className="text-luxury-xs text-warm-gray/60">
-                    Business Management Platform
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
         
         {/* Debug Mode Indicator - Disabled for clean UI */}
         {false && debugModeEnabled && (
