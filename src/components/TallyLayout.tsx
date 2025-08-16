@@ -3,7 +3,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Logo from '@/components/Logo';
 import { useLuxuryTokens } from '@/components/design-system/foundations/useLuxuryTokens';
-import { useFeatureFlag, useFeatureFlagWithAnalytics } from '@/hooks/useFeatureFlags';
+import { useFeatureFlag } from '@/hooks/useFeatureFlags';
 
 interface NavItem {
   name: string;
@@ -205,12 +205,12 @@ export default function TallyLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const { tokens } = useLuxuryTokens();
   
-  // Use feature flag for enhanced navigation with analytics
-  const { isEnabled: useEnhancedNavigation, trackInteraction } = useFeatureFlagWithAnalytics('enhancedNavigation');
+  // Enhanced Navigation is now the permanent default - no feature flag needed
+  const useEnhancedNavigation = true;
+  const trackInteraction = () => {}; // Placeholder for analytics
   
   // Additional feature flags for navigation enhancements
   const enhancedSearchEnabled = useFeatureFlag('enhancedSearch');
@@ -220,12 +220,10 @@ export default function TallyLayout({
   // Get navigation items based on feature flags
   const navigation = getNavigationItems(dashboardAnalyticsEnabled, enhancedSearchEnabled);
   
-  // Track navigation usage when enhanced navigation is used
+  // Enhanced Navigation is permanently enabled - analytics placeholder
   useEffect(() => {
-    if (useEnhancedNavigation) {
-      trackInteraction();
-    }
-  }, [useEnhancedNavigation, trackInteraction]);
+    trackInteraction();
+  }, []);
   
   // Responsive detection
   useEffect(() => {
@@ -365,7 +363,6 @@ export default function TallyLayout({
 
   return (
     <div className="min-h-screen bg-ivory">
-      {useEnhancedNavigation ? (
         <div className="flex flex-col min-h-screen">
           {/* Enhanced Desktop Navigation */}
           <EnhancedDesktopNav />
@@ -383,121 +380,9 @@ export default function TallyLayout({
             </main>
           </div>
         </div>
-      ) : (
-        <div className="flex min-h-screen">
-          {/* Legacy Sidebar Navigation */}
-          <div className={`bg-charcoal transition-all duration-300 ease-in-out ${
-            sidebarExpanded ? 'w-64' : 'w-16'
-          } fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto ${
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-          }`}>
-          <div className="flex flex-col h-full">
-            {/* Sidebar Header */}
-            <div className="flex items-center justify-between h-16 px-4 border-b border-white/10">
-              {sidebarExpanded && (
-                <Logo width={120} height={40} variant="dark" className="opacity-95" />
-              )}
-              <button
-                onClick={() => setSidebarExpanded(!sidebarExpanded)}
-                className="p-2 rounded-md text-white/60 hover:text-white hover:bg-white/10 transition-colors"
-                title={sidebarExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
-              >
-                <span className="text-sm">
-                  {sidebarExpanded ? '←' : '→'}
-                </span>
-              </button>
-            </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-            {navigation.map((item) => {
-              const isActive = isCurrentPath(item.href);
-              return (
-                <button
-                  key={item.name}
-                  onClick={() => {
-                    router.push(item.href);
-                    setSidebarOpen(false); // Close mobile sidebar
-                  }}
-                  className={`group flex items-center w-full px-3 py-3 text-sm font-light tracking-wide rounded-lg transition-all duration-200 ${
-                    isActive
-                      ? 'bg-white/10 text-white border-l-4 border-gold'
-                      : 'text-white/80 hover:bg-white/5 hover:text-white'
-                  }`}
-                  title={!sidebarExpanded ? item.name : undefined}
-                >
-                  <span className="text-lg flex-shrink-0 w-6 text-center">
-                    {item.icon}
-                  </span>
-                  {sidebarExpanded && (
-                    <span className="ml-3 tracking-wide">{item.name}</span>
-                  )}
-                  {!sidebarExpanded && isActive && (
-                    <div className="absolute left-16 bg-charcoal text-white px-2 py-1 rounded text-xs whitespace-nowrap z-50 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {item.name}
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </nav>
-
-            {/* Footer */}
-            <div className="p-4 border-t border-white/10">
-              {sidebarExpanded ? (
-                <div className="text-center">
-                  <p className="text-xs text-white/60 font-light tracking-wide uppercase mb-2">
-                    Tally Photography
-                  </p>
-                  <p className="text-xs text-white/40 font-light">
-                    Business Management
-                  </p>
-                </div>
-              ) : (
-                <div className="text-center">
-                  <span className="text-white/60 text-lg">📸</span>
-                </div>
-              )}
-            </div>
-          </div>
-          </div>
-          
-          {/* Main content area for legacy sidebar */}
-          <div className="flex-1 flex flex-col min-w-0">
-            {/* Legacy Mobile header (only shown when not using enhanced navigation) */}
-            <div className="lg:hidden bg-white shadow-sm border-b border-warm-gray/20">
-              <div className="flex items-center justify-between px-4 py-3">
-                <button
-                  onClick={() => setSidebarOpen(true)}
-                  className="p-2 text-warm-gray hover:text-charcoal transition-colors"
-                >
-                  <span className="text-lg">☰</span>
-                </button>
-                <Logo width={100} height={33} variant="light" className="opacity-90" />
-                <div className="w-8"></div> {/* Spacer for center alignment */}
-              </div>
-            </div>
-
-            {/* Page content with optimized spacing for mobile bottom nav */}
-            <main className="flex-1 overflow-hidden">
-              <div className="h-full">
-                {children}
-              </div>
-            </main>
-          </div>
-        </div>
-      )}
-      
-      {/* Mobile sidebar overlay for legacy navigation */}
-      {!useEnhancedNavigation && sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
       
       {/* Enhanced Mobile Sidebar Overlay */}
-      {useEnhancedNavigation && sidebarOpen && (
+      {sidebarOpen && (
         <>
           <div 
             className="lg:hidden fixed inset-0 bg-black/50 z-40"
