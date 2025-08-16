@@ -88,11 +88,11 @@ function getValidApiKeys(): ApiKeyConfig[] {
     });
   }
   
-  // Production API key for dashboard access
-  if (process.env.NEXT_PUBLIC_ADMIN_API_KEY) {
+  // Production API key for dashboard access (server-side only)
+  if (process.env.ADMIN_API_KEY_DASHBOARD) {
     keys.push({
       id: 'dashboard-admin',
-      hash: hashApiKey(process.env.NEXT_PUBLIC_ADMIN_API_KEY),
+      hash: hashApiKey(process.env.ADMIN_API_KEY_DASHBOARD),
       permissions: ['read', 'write', 'admin'],
       description: 'Dashboard admin access key'
     });

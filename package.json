@@ -17,7 +17,6 @@
     "prestart": "npm run type-check",
     "validate-env": "node -e \"require('./src/lib/env-validation.ts').validateEnvironmentOrExit()\"",
     "deploy:production": "npm run validate-env && npm run build:production",
-    "compress": "npx next-optimized-images",
     "analyze:deps": "npx depcheck",
     "analyze:bundle": "npx @next/bundle-analyzer",
     "prepare": "husky",
@@ -48,9 +47,10 @@
     "@supabase/auth-ui-shared": "^0.1.8",
     "@supabase/supabase-js": "^2.54.0",
     "dotenv": "^17.2.1",
-    "next": "15.4.6",
+    "next": "^15.2.4",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "zod": "^4.0.17"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -74,7 +74,6 @@
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
     "lint-staged": "^16.1.5",
-    "next-optimized-images": "^2.6.2",
     "prettier": "^3.6.2",
     "supabase": "^2.33.9",
     "tailwindcss": "^4",

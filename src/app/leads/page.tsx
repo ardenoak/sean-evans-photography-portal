@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 // Removed AdminAuth - direct access
 import { supabase } from '@/lib/supabase';
+import { authenticatedFetch, authenticatedPost } from '@/lib/auth-fetch';
 import Logo from '@/components/Logo';
 import TallyLayout from '@/components/TallyLayout';
 
@@ -127,15 +128,10 @@ export default function AdminLeadsPage() {
 
   const loadLeads = async () => {
     try {
-      const apiKey = process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c';
-      console.log('🔑 [LEADS] Using API Key:', apiKey ? 'Key present' : 'No key found');
+      console.log('🔑 [LEADS] Loading leads with authenticated fetch');
       console.log('🌍 [LEADS] Environment:', process.env.NODE_ENV);
       
-      const response = await fetch('/api/leads', {
-        headers: {
-          'X-API-Key': apiKey
-        }
-      });
+      const response = await authenticatedFetch('/api/leads');
       const result = await response.json();
       console.log('📋 [LEADS] API result:', result);
       console.log('📡 [LEADS] Response status:', response.status, response.statusText);
@@ -178,11 +174,7 @@ export default function AdminLeadsPage() {
     setProposalsLoading(true);
     try {
       // Load proposals
-      const response = await fetch(`/api/proposals?leadId=${leadId}`, {
-        headers: {
-          'X-API-Key': process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c'
-        }
-      });
+      const response = await authenticatedFetch(`/api/proposals?leadId=${leadId}`);
       const result = await response.json();
       console.log('📄 [PROPOSALS] API result:', result);
       console.log('📡 [PROPOSALS] Response status:', response.status, response.statusText);
@@ -201,11 +193,7 @@ export default function AdminLeadsPage() {
       // Load quotes for this lead
       let quotes = [];
       try {
-        const quotesResponse = await fetch(`/api/quotes?lead_id=${leadId}`, {
-          headers: {
-            'X-API-Key': process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c'
-          }
-        });
+        const quotesResponse = await authenticatedFetch(`/api/quotes?lead_id=${leadId}`);
         const quotesResult = await quotesResponse.json();
         console.log('💰 [QUOTES] API result:', quotesResult);
         console.log('📡 [QUOTES] Response status:', quotesResponse.status, quotesResponse.statusText);
@@ -233,11 +221,7 @@ export default function AdminLeadsPage() {
       try {
         if (quotes.length > 0) {
           const contractPromises = quotes.map((quote: any) => 
-            fetch(`/api/contracts?quote_id=${quote.id}`, {
-              headers: {
-                'X-API-Key': process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c'
-              }
-            })
+            authenticatedFetch(`/api/contracts?quote_id=${quote.id}`)
               .then(res => res.json())
               .then(result => result.data)
               .catch(() => null)
@@ -303,11 +287,7 @@ The lead status has been updated to "converted" and you can now access the clien
   const loadStandardExperiences = async () => {
     setStandardExLoading(true);
     try {
-      const response = await fetch('/api/proposals', {
-        headers: {
-          'X-API-Key': process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c'
-        }
-      });
+      const response = await authenticatedFetch('/api/proposals');
       const result = await response.json();
       
       if (!response.ok) {
@@ -393,11 +373,10 @@ The lead status has been updated to "converted" and you can now access the clien
 
   const markLeadAsViewed = async (leadId: string) => {
     try {
-      const response = await fetch(`/api/leads/${leadId}`, {
+      const response = await authenticatedFetch(`/api/leads/${leadId}`, {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           last_viewed_at: new Date().toISOString()
@@ -594,14 +573,7 @@ The lead status has been updated to "converted" and you can now access the clien
       
       console.log('Final lead data being inserted:', leadData);
 
-      const response = await fetch('/api/leads', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c'
-        },
-        body: JSON.stringify(leadData),
-      });
+      const response = await authenticatedPost('/api/leads', leadData);
 
       const result = await response.json();
       console.log('API result:', result);
@@ -705,76 +677,66 @@ The lead status has been updated to "converted" and you can now access the clien
     );
   }
 
-  if (!true) {
-    return null;
+  if (filteredLeads.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-charcoal/60 text-lg font-light mb-2">No leads found</div>
+        <div className="text-charcoal/40 text-sm">
+          {searchQuery ? 'Try adjusting your search criteria' : 'Create your first lead to get started'}
+        </div>
+      </div>
+    );
   }
 
   return (
     <TallyLayout>
     <div className="bg-ivory">
-      <div className="bg-gradient-to-b from-charcoal/5 to-transparent">
-        <div className="max-w-7xl mx-auto px-6 pt-8 pb-6">
-          <div className="text-center space-y-6">
-            <div className="space-y-3">
-              <h1 className="text-3xl md:text-4xl font-light text-charcoal tracking-wide">
-                Tally • Lead Management
-              </h1>
-              <div className="w-16 h-px bg-charcoal/30 mx-auto"></div>
+      {/* Compact Header */}
+      <div className="border-b border-charcoal/10 bg-white">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-charcoal">Leads</h1>
+              <p className="text-sm text-charcoal/70 mt-1">Client inquiries and prospect management</p>
             </div>
-            <p className="text-base font-light text-charcoal/70 max-w-2xl mx-auto leading-relaxed">
-              Manage client inquiries, track communications, and convert leads to bookings
-            </p>
             {newLeadsCount > 0 && (
-              <div className="inline-flex items-center px-4 py-2 bg-charcoal text-white rounded-full text-sm font-medium">
-                🔥 {newLeadsCount} new lead{newLeadsCount !== 1 ? 's' : ''} to review
+              <div className="bg-charcoal text-white px-3 py-2 rounded text-sm font-medium">
+                {newLeadsCount} new lead{newLeadsCount !== 1 ? 's' : ''}
               </div>
             )}
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="text-center mb-16">
-          <h2 className="text-2xl font-light text-charcoal tracking-wide mb-4">Overview</h2>
-          <div className="w-16 h-px bg-charcoal/20 mx-auto"></div>
-        </div>
+      <div className="max-w-7xl mx-auto px-6 py-4">
 
-        {/* Elegant Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          <div className="bg-white border border-charcoal/10 p-8 text-center">
-            <div className="text-4xl font-light text-charcoal mb-2">{leads.length}</div>
-            <div className="text-sm font-light text-charcoal/60 tracking-wide uppercase">Total Leads</div>
+        {/* Compact Lead Management */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <div></div>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-verde text-white px-4 py-2 text-sm font-medium hover:bg-verde/90 transition-colors rounded"
+            >
+              + New Lead
+            </button>
           </div>
-          <div className="bg-white border border-charcoal/10 p-8 text-center">
-            <div className="text-4xl font-light text-charcoal mb-2">{statusCounts.new || 0}</div>
-            <div className="text-sm font-light text-charcoal/60 tracking-wide uppercase">New</div>
-          </div>
-          <div className="bg-white border border-charcoal/10 p-8 text-center">
-            <div className="text-4xl font-light text-charcoal mb-2">{statusCounts.qualified || 0}</div>
-            <div className="text-sm font-light text-charcoal/60 tracking-wide uppercase">Qualified</div>
-          </div>
-          <div className="bg-white border border-charcoal/10 p-8 text-center">
-            <div className="text-4xl font-light text-charcoal mb-2">{statusCounts.converted || 0}</div>
-            <div className="text-sm font-light text-charcoal/60 tracking-wide uppercase">Converted</div>
-          </div>
-        </div>
-
-        {/* Refined Filters */}
-        <div className="bg-white border border-charcoal/10 p-8 mb-12">
-          <div className="flex flex-col lg:flex-row gap-6 items-center justify-between">
-            <div className="flex flex-col sm:flex-row gap-4">
+          
+          {/* Compact Filters */}
+          <div className="border border-charcoal/20 bg-white p-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-4 py-3 border border-charcoal/20 text-sm font-light focus:outline-none focus:border-charcoal transition-colors"
+                className="px-3 py-2 border border-charcoal/20 text-sm focus:ring-1 focus:ring-verde focus:border-verde rounded"
               >
                 <option value="all">All Status</option>
-                <option value="new">New</option>
-                <option value="contacted">Contacted</option>
-                <option value="qualified">Qualified</option>
-                <option value="proposal_sent">Experience Sent</option>
-                <option value="converted">Converted</option>
-                <option value="lost">Lost</option>
+                <option value="new">🔥 New</option>
+                <option value="contacted">📞 Contacted</option>
+                <option value="qualified">✅ Qualified</option>
+                <option value="proposal_sent">📋 Experience Sent</option>
+                <option value="converted">⭐ Converted</option>
+                <option value="lost">❌ Lost</option>
               </select>
               
               <input
@@ -782,116 +744,208 @@ The lead status has been updated to "converted" and you can now access the clien
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search leads..."
-                className="px-4 py-3 border border-charcoal/20 text-sm font-light focus:outline-none focus:border-charcoal transition-colors min-w-64"
+                className="flex-1 px-3 py-2 border border-charcoal/20 text-sm focus:ring-1 focus:ring-verde focus:border-verde rounded"
               />
+              
+              <div className="text-sm text-charcoal/60 flex items-center px-2">
+                {filteredLeads.length} of {leads.length} leads
+              </div>
             </div>
-            
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="bg-charcoal text-white px-8 py-3 text-sm font-light tracking-wide uppercase hover:bg-charcoal/90 transition-all duration-300"
-            >
-              Add New Lead
-            </button>
           </div>
         </div>
 
-        {/* Elegant Leads List */}
-        <div className="space-y-6">
-          <div className="text-center mb-8">
-            <h3 className="text-xl font-light text-charcoal tracking-wide mb-4">Client Leads</h3>
-            <div className="w-12 h-px bg-charcoal/20 mx-auto"></div>
-          </div>
-
+        {/* Leads Table - Dense List Format */}
+        <div className="border border-charcoal/20 bg-white">
           {filteredLeads.length === 0 ? (
-            <div className="bg-white border border-charcoal/10 p-16 text-center">
-              <div className="text-charcoal/60 text-lg font-light mb-4">No leads found</div>
-              <div className="text-charcoal/40 text-sm">Try adjusting your search criteria</div>
+            <div className="text-center py-12">
+              <div className="w-12 h-12 bg-charcoal/5 rounded-full mx-auto mb-3 flex items-center justify-center">
+                <svg className="w-6 h-6 text-charcoal/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <p className="text-charcoal/60 font-light text-sm">No leads found</p>
+              <p className="text-charcoal/40 text-xs mt-1">Try adjusting your search criteria</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {filteredLeads.map((lead) => (
-                <div
-                  key={lead.id}
-                  className={`bg-white border border-charcoal/10 hover:border-charcoal/30 cursor-pointer transition-all duration-300 relative ${
-                    isNewLead(lead) ? 'border-l-4 border-l-verde bg-verde/5' : ''
-                  }`}
-                  onClick={() => {
-                    setSelectedLead(lead);
-                    setEditedLead(lead);
-                    setHasUnsavedChanges(false);
-                    setLeadProposals([]);
-                    setLeadQuotes([]);
-                    setLeadContracts([]);
-                    loadLeadProposals(lead.id);
-                    if (isNewLead(lead)) {
-                      markLeadAsViewed(lead.id);
-                    }
-                  }}
-                >
-                  <div className="p-6">
-                    {/* New Lead Indicator */}
-                    {isNewLead(lead) && (
-                      <div className="absolute top-3 right-3">
-                        <div className="bg-verde text-white px-3 py-1 text-xs font-medium tracking-wide shadow-sm">
-                          NEW
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="mb-3">
-                          <h4 className="text-lg font-light text-charcoal tracking-wide mb-1">
-                            {lead.first_name} {lead.last_name}
-                          </h4>
-                          <div className="text-charcoal/60 font-light text-sm">{lead.email}</div>
+            <>
+              {/* Table Header - Desktop Only */}
+              <div className="hidden md:block border-b border-charcoal/10 bg-charcoal/5">
+                <div className="grid grid-cols-12 gap-4 px-4 py-3 text-xs font-medium text-charcoal/70 uppercase tracking-wide">
+                  <div className="col-span-3">Contact & Interest</div>
+                  <div className="col-span-2">Budget & Timeline</div>
+                  <div className="col-span-3">Message</div>
+                  <div className="col-span-2">Source & Date</div>
+                  <div className="col-span-2">Status</div>
+                </div>
+              </div>
+
+              {/* Leads Rows */}
+              <div className="divide-y divide-charcoal/5">
+                {filteredLeads.map((lead) => (
+                  <div
+                    key={lead.id}
+                    className={`relative hover:bg-ivory/50 cursor-pointer transition-all duration-200 ${
+                      isNewLead(lead) ? 'bg-verde/5 border-l-2 border-l-verde' : ''
+                    }`}
+                    onClick={() => {
+                      setSelectedLead(lead);
+                      setEditedLead(lead);
+                      setHasUnsavedChanges(false);
+                      setLeadProposals([]);
+                      setLeadQuotes([]);
+                      setLeadContracts([]);
+                      loadLeadProposals(lead.id);
+                      if (isNewLead(lead)) {
+                        markLeadAsViewed(lead.id);
+                      }
+                    }}
+                  >
+                    {/* Desktop Table Row */}
+                    <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-4 items-center">
+                      {/* Contact & Interest Column */}
+                      <div className="col-span-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <div className="font-medium text-charcoal text-sm">
+                              {lead.first_name} {lead.last_name}
+                            </div>
+                            {isNewLead(lead) && (
+                              <span className="bg-verde text-white px-2 py-0.5 text-xs font-medium rounded">
+                                NEW
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-charcoal/60 text-xs">{lead.email}</div>
                           {lead.phone && (
-                            <div className="text-charcoal/60 font-light text-xs">{lead.phone}</div>
+                            <div className="text-charcoal/60 text-xs">{lead.phone}</div>
+                          )}
+                          {lead.session_type_interest && (
+                            <div className="text-charcoal/80 text-xs font-medium">
+                              {lead.session_type_interest}
+                            </div>
                           )}
                         </div>
+                      </div>
+                      
+                      {/* Budget & Timeline Column */}
+                      <div className="col-span-2">
+                        <div className="space-y-1">
+                          {lead.budget_range && (
+                            <div className="text-charcoal text-sm font-medium">
+                              {lead.budget_range}
+                            </div>
+                          )}
+                          {lead.preferred_timeline && (
+                            <div className="text-charcoal/60 text-xs">
+                              {lead.preferred_timeline}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Message Column */}
+                      <div className="col-span-3">
+                        {lead.message && (
+                          <div className="text-charcoal/70 text-xs leading-relaxed">
+                            {lead.message.substring(0, 80)}...
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Source & Date Column */}
+                      <div className="col-span-2">
+                        <div className="space-y-1">
+                          <div className="text-charcoal/60 text-xs">
+                            {lead.lead_source || 'Website'}
+                          </div>
+                          <div className="text-charcoal/60 text-xs">
+                            {formatDate(lead.created_at)}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Status Column */}
+                      <div className="col-span-2">
+                        <div className="flex items-center justify-between">
+                          <div className={`px-3 py-1 text-xs font-medium rounded ${getStatusColor(lead.status)}`}>
+                            {lead.status === 'new' ? 'NEW' : lead.status.toUpperCase().replace('_', ' ')}
+                          </div>
+                          <button className="text-charcoal/40 hover:text-charcoal/60 transition-colors">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                    {/* Mobile Card Layout */}
+                    <div className="md:hidden p-4">
+                      <div className="space-y-3">
+                        {/* Header */}
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <div className="font-medium text-charcoal">
+                                {lead.first_name} {lead.last_name}
+                              </div>
+                              {isNewLead(lead) && (
+                                <span className="bg-verde text-white px-2 py-0.5 text-xs font-medium rounded">
+                                  NEW
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-charcoal/60 text-sm mt-1">{lead.email}</div>
+                            {lead.phone && (
+                              <div className="text-charcoal/60 text-sm">{lead.phone}</div>
+                            )}
+                          </div>
+                          <div className={`px-3 py-1 text-xs font-medium rounded ${getStatusColor(lead.status)}`}>
+                            {lead.status === 'new' ? 'NEW' : lead.status.toUpperCase().replace('_', ' ')}
+                          </div>
+                        </div>
+                        
+                        {/* Details Grid */}
+                        <div className="grid grid-cols-2 gap-3 text-sm">
                           {lead.session_type_interest && (
                             <div>
-                              <div className="text-charcoal/60 text-xs uppercase tracking-wide mb-1">Session Type</div>
-                              <div className="text-charcoal font-light text-sm">{lead.session_type_interest}</div>
+                              <div className="text-charcoal/60 text-xs uppercase tracking-wide mb-1">Session</div>
+                              <div className="text-charcoal">{lead.session_type_interest}</div>
                             </div>
                           )}
                           {lead.budget_range && (
                             <div>
                               <div className="text-charcoal/60 text-xs uppercase tracking-wide mb-1">Budget</div>
-                              <div className="text-charcoal font-light text-sm">{lead.budget_range}</div>
+                              <div className="text-charcoal">{lead.budget_range}</div>
                             </div>
                           )}
                           {lead.preferred_timeline && (
                             <div>
                               <div className="text-charcoal/60 text-xs uppercase tracking-wide mb-1">Timeline</div>
-                              <div className="text-charcoal font-light text-sm">{lead.preferred_timeline}</div>
+                              <div className="text-charcoal">{lead.preferred_timeline}</div>
                             </div>
                           )}
+                          <div>
+                            <div className="text-charcoal/60 text-xs uppercase tracking-wide mb-1">Created</div>
+                            <div className="text-charcoal">{formatDate(lead.created_at)}</div>
+                          </div>
                         </div>
-
+                        
+                        {/* Message */}
                         {lead.message && (
-                          <div className="border-l-2 border-charcoal/20 pl-3 italic text-charcoal/70 font-light text-sm">
-                            "{lead.message.substring(0, 120)}..."
+                          <div className="border-l-2 border-charcoal/20 pl-3">
+                            <div className="text-charcoal/60 text-xs uppercase tracking-wide mb-1">Message</div>
+                            <div className="text-charcoal/70 text-sm italic">
+                              "{lead.message.substring(0, 100)}..."
+                            </div>
                           </div>
                         )}
                       </div>
-                      
-                      <div className="ml-6 text-right space-y-2">
-                        <div className="text-charcoal/60 text-xs uppercase tracking-wide">Status</div>
-                        <div className={`px-3 py-1.5 text-xs font-light tracking-wide ${getStatusColor(lead.status)}`}>
-                          {lead.status === 'new' ? 'NEW' : lead.status.toUpperCase().replace('_', ' ')}
-                        </div>
-                        <div className="text-charcoal/60 text-xs font-light">
-                          {formatDate(lead.created_at)}
-                        </div>
-                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>

@@ -1,29 +1,30 @@
 /**
- * Centralized authentication utility for API calls
+ * Secure client-side fetch utility for API calls
  * 
- * This utility ensures all API calls in production include the required
- * X-API-Key header for authentication with the middleware.
+ * This utility provides secure client-side API calls without exposing
+ * API keys to the browser. Authentication is handled server-side by
+ * Next.js middleware and API routes.
  */
 
-const API_KEY = process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c';
-
 /**
- * Authenticated fetch wrapper that automatically includes API key headers
+ * Authenticated fetch wrapper for client-side API calls
  * 
  * @param url - The URL to fetch from
  * @param options - Standard fetch options (method, body, etc.)
  * @returns Promise<Response>
  */
 export const authenticatedFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
-  const authHeaders = {
-    'X-API-Key': API_KEY,
-    ...options.headers
+  // Add credentials to include session cookies for server-side authentication
+  const defaultOptions: RequestInit = {
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers
+    },
+    ...options
   };
 
-  return fetch(url, {
-    ...options,
-    headers: authHeaders
-  });
+  return fetch(url, defaultOptions);
 };
 
 /**

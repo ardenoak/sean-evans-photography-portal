@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { authenticatedFetch, authenticatedPost } from '@/lib/auth-fetch';
 import Logo from '@/components/Logo';
 import TallyLayout from '@/components/TallyLayout';
 
@@ -390,16 +391,14 @@ export default function PackagesPage() {
     }
 
     try {
-      const apiKey = process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c';
-      console.log('🔑 [PACKAGE-DELETE] Using API Key:', apiKey ? 'Key present' : 'No key found');
+      console.log('🔑 [PACKAGE-DELETE] Deleting package with authenticated fetch');
       console.log('🌍 [PACKAGE-DELETE] Environment:', process.env.NODE_ENV);
       console.log('🗑️ [PACKAGE-DELETE] Deleting package:', pkg.id, pkg.title);
       
-      const response = await fetch('/api/packages', {
+      const response = await authenticatedFetch('/api/packages', {
         method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': apiKey
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ id: pkg.id })
       });
@@ -469,16 +468,14 @@ export default function PackagesPage() {
       
       console.log('Sending package data:', requestBody);
 
-      const apiKey = process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c';
-      console.log(`🔑 [PACKAGE-${isEditing ? 'UPDATE' : 'CREATE'}] Using API Key:`, apiKey ? 'Key present' : 'No key found');
+      console.log(`🔑 [PACKAGE-${isEditing ? 'UPDATE' : 'CREATE'}] Using authenticated fetch`);
       console.log(`🌍 [PACKAGE-${isEditing ? 'UPDATE' : 'CREATE'}] Environment:`, process.env.NODE_ENV);
       console.log(`📦 [PACKAGE-${isEditing ? 'UPDATE' : 'CREATE'}] Package data:`, requestBody);
       
-      const response = await fetch(url, {
+      const response = await authenticatedFetch(url, {
         method,
         headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': apiKey
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(requestBody)
       });
@@ -540,16 +537,11 @@ export default function PackagesPage() {
       let leadData = null;
       if (isForLead) {
         // Fetch lead data to personalize the experience
-        const apiKey = process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c';
-        console.log('🔑 [LEAD-FETCH] Using API Key:', apiKey ? 'Key present' : 'No key found');
+        console.log('🔑 [LEAD-FETCH] Fetching lead with authenticated fetch');
         console.log('🌍 [LEAD-FETCH] Environment:', process.env.NODE_ENV);
         console.log('🎯 [LEAD-FETCH] Fetching lead:', leadId);
         
-        const response = await fetch(`/api/leads/${leadId}`, {
-          headers: {
-            'X-API-Key': apiKey
-          }
-        });
+        const response = await authenticatedFetch(`/api/leads/${leadId}`);
         const result = await response.json();
         console.log('📝 [LEAD-FETCH] API result:', result);
         console.log('📡 [LEAD-FETCH] Response status:', response.status, response.statusText);
@@ -861,159 +853,87 @@ export default function PackagesPage() {
 
   return (
     <TallyLayout>
-    <div className="min-h-screen bg-ivory">
-      {/* Header */}
-      <div className="bg-gradient-to-b from-charcoal/5 to-transparent">
-        <div className="max-w-7xl mx-auto px-6 py-12">
-          <div className="text-center space-y-8">
-            <div className="space-y-4">
-              <h1 className="text-4xl md:text-5xl font-light text-charcoal tracking-wide">
-                Experience & Pricing Management
-              </h1>
-              <div className="w-16 h-px bg-charcoal/30 mx-auto"></div>
+      <div className="min-h-screen bg-ivory">
+      {/* Compact Header */}
+      <div className="border-b border-charcoal/10 bg-white">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-charcoal">Packages & Experiences</h1>
+              <p className="text-sm text-charcoal/70 mt-1">Component packages and curated experiences</p>
             </div>
-            <p className="text-lg font-light text-charcoal/70 max-w-2xl mx-auto leading-relaxed">
-              Central hub for creating custom experiences by combining packages, enhancements, and motion
-            </p>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Pricing Overview */}
-        <div className="mb-16">
-          <div className="grid lg:grid-cols-3 gap-8 mb-12">
-            {/* Experience Components Overview */}
-            <div className="bg-white border border-charcoal/20 p-8">
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <h3 className="text-xl font-light text-charcoal tracking-wide">Experience Components</h3>
-                  <div className="w-8 h-px bg-charcoal/30"></div>
+        {/* Compact Management Section */}
+        <div className="bg-white px-6 py-4 border-b border-charcoal/10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-8">
+              <div className="text-center">
+                <div className="text-lg font-semibold text-charcoal">
+                  {packages.filter(pkg => getPackageTypeFromThemeKeywords(pkg.theme_keywords) === 'package' && pkg.is_active).length}
                 </div>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-charcoal/70 font-light">Packages</span>
-                    <span className="text-2xl font-light text-charcoal">
-                      {packages.filter(pkg => getPackageTypeFromThemeKeywords(pkg.theme_keywords) === 'package' && pkg.is_active).length}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-charcoal/70 font-light">Enhancements</span>
-                    <span className="text-2xl font-light text-charcoal">
-                      {packages.filter(pkg => getPackageTypeFromThemeKeywords(pkg.theme_keywords) === 'enhancement' && pkg.is_active).length}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-charcoal/70 font-light">Motion/Video</span>
-                    <span className="text-2xl font-light text-charcoal">
-                      {packages.filter(pkg => getPackageTypeFromThemeKeywords(pkg.theme_keywords) === 'motion' && pkg.is_active).length}
-                    </span>
-                  </div>
+                <div className="text-xs text-charcoal/60 uppercase tracking-wide">Packages</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-semibold text-charcoal">
+                  {packages.filter(pkg => getPackageTypeFromThemeKeywords(pkg.theme_keywords) === 'enhancement' && pkg.is_active).length}
                 </div>
+                <div className="text-xs text-charcoal/60 uppercase tracking-wide">Enhancements</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-semibold text-charcoal">
+                  {experiences.filter(exp => exp.status === 'template' || (exp.status === 'draft' && !(exp as any).lead_id)).length}
+                </div>
+                <div className="text-xs text-charcoal/60 uppercase tracking-wide">Experiences</div>
               </div>
             </div>
-
-            {/* Custom Experiences Overview */}
-            <div className="bg-white border border-charcoal/20 p-8">
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <h3 className="text-xl font-light text-charcoal tracking-wide">Custom Experiences</h3>
-                  <div className="w-8 h-px bg-charcoal/30"></div>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-charcoal/70 font-light">Active Custom</span>
-                    <span className="text-2xl font-light text-charcoal">
-                      {packages.filter(pkg => !pkg.is_template && pkg.is_active).length}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-charcoal/70 font-light">Average Price</span>
-                    <span className="text-lg font-light text-charcoal">
-                      {packages.filter(pkg => !pkg.is_template && pkg.is_active).length > 0 
-                        ? formatCurrency(packages.filter(pkg => !pkg.is_template && pkg.is_active).reduce((sum, pkg) => sum + pkg.price, 0) / packages.filter(pkg => !pkg.is_template && pkg.is_active).length)
-                        : formatCurrency(0)
-                      }
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Experience Strategy */}
-            <div className="bg-purple-50 border border-purple-200 p-8">
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <h3 className="text-xl font-light text-charcoal tracking-wide">Experience Strategy</h3>
-                  <div className="w-8 h-px bg-purple-300"></div>
-                </div>
-                <div className="space-y-3 text-sm">
-                  <div className="text-charcoal/80 font-light">
-                    • Build experiences with Package + Enhancement + Motion
-                  </div>
-                  <div className="text-charcoal/80 font-light">
-                    • Create flexible pricing combinations
-                  </div>
-                  <div className="text-charcoal/80 font-light">
-                    • Standard templates for common requests
-                  </div>
-                  <div className="text-charcoal/80 font-light">
-                    • Custom experiences for unique client needs
-                  </div>
-                </div>
-              </div>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowCreateModal(true)}
+                className="bg-verde text-white px-4 py-2 text-sm font-medium hover:bg-verde/90 transition-colors rounded"
+              >
+                Add Component
+              </button>
+              <button 
+                onClick={() => {
+                  sessionStorage.removeItem('leadId');
+                  setShowExperienceBuilder(true);
+                }}
+                className="bg-purple-600 text-white px-4 py-2 text-sm font-medium hover:bg-purple-700 transition-colors rounded"
+              >
+                Create Experience
+              </button>
             </div>
           </div>
         </div>
 
         {/* Controls */}
-        <div className="flex flex-col md:flex-row gap-6 mb-12">
-          {/* Category Filter */}
-          <div className="flex-1">
+        <div className="bg-white px-6 py-4 border-b border-charcoal/10">
+          <div className="flex items-center gap-4">
             <select 
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-6 py-4 border border-charcoal/20 bg-white text-charcoal font-light focus:border-charcoal/40 focus:outline-none transition-colors"
+              className="px-3 py-2 border border-charcoal/20 text-sm focus:ring-1 focus:ring-verde focus:border-verde rounded"
             >
               <option value="all">All Categories</option>
               <option value="package">Package</option>
               <option value="enhancement">Enhancement</option>
               <option value="motion">Motion/Video</option>
             </select>
-          </div>
 
-          {/* Type Filter */}
-          <div className="flex-1">
             <select 
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
-              className="w-full px-6 py-4 border border-charcoal/20 bg-white text-charcoal font-light focus:border-charcoal/40 focus:outline-none transition-colors"
+              className="px-3 py-2 border border-charcoal/20 text-sm focus:ring-1 focus:ring-verde focus:border-verde rounded"
             >
               <option value="all">All Types</option>
               <option value="experiences">Experiences Only</option>
               <option value="templates">Standard Only</option>
               <option value="custom">Custom Only</option>
             </select>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-3">
-            <button 
-              onClick={() => setShowCreateModal(true)}
-              className="px-6 py-4 bg-charcoal text-white font-light tracking-wide uppercase hover:bg-charcoal/90 transition-all duration-300"
-            >
-              Create Component
-            </button>
-            <button 
-              onClick={() => {
-                // Clear any existing leadId from sessionStorage to prevent auto-assignment
-                sessionStorage.removeItem('leadId');
-                setShowExperienceBuilder(true);
-              }}
-              className="px-6 py-4 bg-purple-600 text-white font-light tracking-wide uppercase hover:bg-purple-700 transition-all duration-300"
-            >
-              Create Experience
-            </button>
           </div>
         </div>
 
@@ -1310,117 +1230,61 @@ export default function PackagesPage() {
           </div>
         ) : (
           /* Packages Grid */
-          <>
-            {filteredPackages.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="space-y-6">
-              <div className="text-charcoal/60 text-xl font-light">
-                No packages found
+          filteredPackages.length === 0 ? (
+            <div className="text-center py-20">
+              <div className="space-y-6">
+                <div className="text-charcoal/60 text-xl font-light">
+                  No packages found
+                </div>
+                <button 
+                  onClick={() => setShowCreateModal(true)}
+                  className="px-8 py-4 bg-charcoal text-white font-light tracking-wide uppercase hover:bg-charcoal/90 transition-all duration-300"
+                >
+                  Create Your First Package
+                </button>
               </div>
-              <button 
-                onClick={() => setShowCreateModal(true)}
-                className="px-8 py-4 bg-charcoal text-white font-light tracking-wide uppercase hover:bg-charcoal/90 transition-all duration-300"
-              >
-                Create Your First Package
-              </button>
             </div>
-          </div>
-        ) : (
-          <div className="grid lg:grid-cols-2 gap-8">
+          ) : (
+            <>
+              {/* Table Header - Desktop Only */}
+            <div className="hidden md:block border-b border-charcoal/10 bg-charcoal/5">
+              <div className="grid grid-cols-12 gap-4 px-4 py-3 text-xs font-medium text-charcoal/70 uppercase tracking-wide">
+                <div className="col-span-4">Package & Details</div>
+                <div className="col-span-2">Price & Type</div>
+                <div className="col-span-3">Components</div>
+                <div className="col-span-2">Status</div>
+                <div className="col-span-1">Actions</div>
+              </div>
+            </div>
+
+            {/* Packages Table */}
+            <div className="divide-y divide-charcoal/5">
             {filteredPackages.map((pkg) => (
-              <div key={pkg.id} className="border border-charcoal/20 bg-white hover:shadow-lg transition-shadow duration-300">
-                <div className="p-8 space-y-6">
-                  {/* Package Header */}
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <h3 className="text-2xl font-light text-charcoal">{pkg.title}</h3>
+              <div key={pkg.id} className="relative hover:bg-ivory/50 cursor-pointer transition-all duration-200">
+                {/* Desktop Table Row */}
+                <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-4 items-center">
+                  {/* Package & Details Column */}
+                  <div className="col-span-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <div className="font-medium text-charcoal text-sm">{pkg.title}</div>
                         {pkg.is_template && (
-                          <span className="bg-verde/20 text-verde px-3 py-1 text-xs font-medium uppercase tracking-wide">
+                          <span className="bg-verde/20 text-verde px-2 py-0.5 text-xs font-medium uppercase tracking-wide rounded">
                             Standard
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-charcoal/60">
-                        <span className="font-medium text-charcoal">{formatCurrency(pkg.price)}</span>
+                      <div className="text-charcoal/60 text-xs leading-relaxed">
+                        {pkg.description.substring(0, 100)}...
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => copyPackage(pkg)}
-                        className="p-2 hover:bg-verde/10 rounded transition-colors group"
-                        title="Copy Package"
-                      >
-                        <svg className="w-5 h-5 text-charcoal/60 group-hover:text-verde" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                      </button>
-                      <button 
-                        onClick={() => editPackage(pkg)}
-                        className="p-2 hover:bg-charcoal/5 rounded transition-colors"
-                        title="Edit Package"
-                      >
-                        <svg className="w-5 h-5 text-charcoal/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                        </svg>
-                      </button>
-                      <button 
-                        onClick={() => deletePackage(pkg)}
-                        className="p-2 hover:bg-red-50 rounded transition-colors"
-                        title="Delete Package"
-                      >
-                        <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
                   </div>
-
-                  {/* Package Description */}
-                  <p className="text-sm font-light text-charcoal/80 leading-relaxed">
-                    {pkg.description.substring(0, 200)}
-                    {pkg.description.length > 200 ? '...' : ''}
-                  </p>
-
-                  {/* Package Details */}
-                  {(pkg.sessions || pkg.locations || pkg.gallery) && (
-                    <div className="grid grid-cols-2 gap-4 py-4 border-t border-charcoal/10">
-                      {pkg.sessions && (
-                        <div className="text-xs">
-                          <span className="text-charcoal/60">Duration:</span>
-                          <span className="ml-2 font-medium text-charcoal">{pkg.sessions}</span>
-                        </div>
-                      )}
-                      {pkg.locations && (
-                        <div className="text-xs">
-                          <span className="text-charcoal/60">Locations:</span>
-                          <span className="ml-2 font-medium text-charcoal">{pkg.locations}</span>
-                        </div>
-                      )}
-                      {pkg.gallery && (
-                        <div className="text-xs">
-                          <span className="text-charcoal/60">Gallery:</span>
-                          <span className="ml-2 font-medium text-charcoal">{pkg.gallery}</span>
-                        </div>
-                      )}
-                      {pkg.delivery && (
-                        <div className="text-xs">
-                          <span className="text-charcoal/60">Delivery:</span>
-                          <span className="ml-2 font-medium text-charcoal">{pkg.delivery}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Package Status */}
-                  <div className="flex items-center justify-between pt-4 border-t border-charcoal/10">
-                    <div className="flex items-center gap-2">
-                      <div className={`px-3 py-1 text-xs uppercase tracking-wide ${
-                        pkg.is_active 
-                          ? 'bg-verde/20 text-verde' 
-                          : 'bg-charcoal/20 text-charcoal/60'
-                      }`}>
-                        {pkg.is_active ? 'Active' : 'Inactive'}
+                  
+                  {/* Price & Type Column */}
+                  <div className="col-span-2">
+                    <div className="space-y-1">
+                      <div className="text-charcoal text-sm font-medium">
+                        {formatCurrency(pkg.price)}
                       </div>
                       {(() => {
                         const packageType = getPackageTypeFromThemeKeywords(pkg.theme_keywords);
@@ -1430,22 +1294,163 @@ export default function PackagesPage() {
                           motion: 'bg-purple-100 text-purple-700'
                         };
                         return (
-                          <div className={`px-3 py-1 text-xs uppercase tracking-wide ${categoryColors[packageType]}`}>
+                          <div className={`px-2 py-0.5 text-xs uppercase tracking-wide rounded ${categoryColors[packageType]}`}>
                             {packageType === 'motion' ? 'Motion/Video' : packageType}
                           </div>
                         );
                       })()}
                     </div>
-                    <div className="text-xs text-charcoal/60">
-                      Created {new Date(pkg.created_at).toLocaleDateString()}
+                  </div>
+                  
+                  {/* Components Column */}
+                  <div className="col-span-3">
+                    <div className="space-y-1 text-xs">
+                      {pkg.sessions && (
+                        <div><span className="text-charcoal/60">Duration:</span> <span className="text-charcoal">{pkg.sessions}</span></div>
+                      )}
+                      {pkg.locations && (
+                        <div><span className="text-charcoal/60">Locations:</span> <span className="text-charcoal">{pkg.locations}</span></div>
+                      )}
+                      {pkg.gallery && (
+                        <div><span className="text-charcoal/60">Gallery:</span> <span className="text-charcoal">{pkg.gallery}</span></div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Status Column */}
+                  <div className="col-span-2">
+                    <div className="space-y-1">
+                      <div className={`px-3 py-1 text-xs font-medium rounded ${
+                        pkg.is_active 
+                          ? 'bg-verde/20 text-verde' 
+                          : 'bg-charcoal/20 text-charcoal/60'
+                      }`}>
+                        {pkg.is_active ? 'Active' : 'Inactive'}
+                      </div>
+                      <div className="text-charcoal/60 text-xs">
+                        {new Date(pkg.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Actions Column */}
+                  <div className="col-span-1">
+                    <div className="flex items-center gap-1">
+                      <button 
+                        onClick={() => editPackage(pkg)}
+                        className="p-1 hover:bg-charcoal/5 rounded transition-colors"
+                        title="Edit Package"
+                      >
+                        <svg className="w-4 h-4 text-charcoal/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                      </button>
+                      <button 
+                        onClick={() => copyPackage(pkg)}
+                        className="p-1 hover:bg-verde/10 rounded transition-colors"
+                        title="Copy Package"
+                      >
+                        <svg className="w-4 h-4 text-charcoal/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                      </button>
+                      <button 
+                        onClick={() => deletePackage(pkg)}
+                        className="p-1 hover:bg-red-50 rounded transition-colors"
+                        title="Delete Package"
+                      >
+                        <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mobile Card Layout */}
+                <div className="md:hidden p-4">
+                  <div className="space-y-3">
+                    {/* Header */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <div className="font-medium text-charcoal">{pkg.title}</div>
+                          {pkg.is_template && (
+                            <span className="bg-verde/20 text-verde px-2 py-0.5 text-xs font-medium uppercase tracking-wide rounded">
+                              Standard
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-charcoal text-lg font-medium mt-1">{formatCurrency(pkg.price)}</div>
+                      </div>
+                      <div className={`px-3 py-1 text-xs font-medium rounded ${
+                        pkg.is_active 
+                          ? 'bg-verde/20 text-verde' 
+                          : 'bg-charcoal/20 text-charcoal/60'
+                      }`}>
+                        {pkg.is_active ? 'Active' : 'Inactive'}
+                      </div>
+                    </div>
+                    
+                    {/* Description */}
+                    <div className="text-charcoal/70 text-sm">
+                      {pkg.description.substring(0, 120)}...
+                    </div>
+                    
+                    {/* Details Grid */}
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      {pkg.sessions && (
+                        <div>
+                          <div className="text-charcoal/60 text-xs uppercase tracking-wide mb-1">Duration</div>
+                          <div className="text-charcoal">{pkg.sessions}</div>
+                        </div>
+                      )}
+                      {pkg.locations && (
+                        <div>
+                          <div className="text-charcoal/60 text-xs uppercase tracking-wide mb-1">Locations</div>
+                          <div className="text-charcoal">{pkg.locations}</div>
+                        </div>
+                      )}
+                      {pkg.gallery && (
+                        <div>
+                          <div className="text-charcoal/60 text-xs uppercase tracking-wide mb-1">Gallery</div>
+                          <div className="text-charcoal">{pkg.gallery}</div>
+                        </div>
+                      )}
+                      <div>
+                        <div className="text-charcoal/60 text-xs uppercase tracking-wide mb-1">Created</div>
+                        <div className="text-charcoal">{new Date(pkg.created_at).toLocaleDateString()}</div>
+                      </div>
+                    </div>
+                    
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 pt-2 border-t border-charcoal/10">
+                      <button 
+                        onClick={() => editPackage(pkg)}
+                        className="flex-1 py-2 px-3 border border-charcoal/20 text-charcoal text-xs font-medium hover:bg-charcoal hover:text-white transition-all duration-300 rounded"
+                      >
+                        Edit
+                      </button>
+                      <button 
+                        onClick={() => copyPackage(pkg)}
+                        className="flex-1 py-2 px-3 border border-verde/20 text-verde text-xs font-medium hover:bg-verde hover:text-white transition-all duration-300 rounded"
+                      >
+                        Copy
+                      </button>
+                      <button 
+                        onClick={() => deletePackage(pkg)}
+                        className="py-2 px-3 border border-red-200 text-red-500 text-xs font-medium hover:bg-red-500 hover:text-white transition-all duration-300 rounded"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
                 </div>
               </div>
             ))}
-          </div>
-        )}
-        </>
+            </div>
+            </>
+          )
         )}
       </div>
 

@@ -2,20 +2,126 @@
 @import url('https://fonts.googleapis.com/css2?family=Didot:wght@400;700&display=swap');
 
 :root {
+  /* Accessibility-compliant luxury palette */
   --charcoal: #2c2c2c;
   --verde: #4a5d23;
-  --gold: #d4af37;
+  --gold: #876214; /* WCAG AA compliant for ivory backgrounds */
   --ivory: #f8f6f0;
-  --warm-gray: #6b7280;
+  --warm-gray: #4B5563; /* WCAG AA compliant for ivory backgrounds */
+  
+  /* Enhanced luxury color variations */
+  --charcoal-light: #404040;
+  --charcoal-dark: #1a1a1a;
+  --verde-light: #6B8E5A;
+  --verde-dark: #3a4a1b;
+  --gold-light: #B8941F;
+  --gold-dark: #6B5412;
+  --ivory-warm: #faf9f4;
+  --ivory-cool: #f6f5f2;
+  --warm-gray-light: #9ca3af;
+  --warm-gray-dark: #4b5563;
+  
+  /* Enhanced luxury spacing scale */
+  --space-luxury-xs: 0.25rem;    /* 4px */
+  --space-luxury-sm: 0.5rem;     /* 8px */
+  --space-luxury-md: 1rem;       /* 16px */
+  --space-luxury-lg: 1.5rem;     /* 24px */
+  --space-luxury-xl: 2rem;       /* 32px */
+  --space-luxury-2xl: 3rem;      /* 48px */
+  --space-luxury-3xl: 4rem;      /* 64px */
+  --space-luxury-4xl: 6rem;      /* 96px */
+  
+  /* Sophisticated typography scale */
+  --font-luxury-xs: 0.75rem;     /* 12px */
+  --font-luxury-sm: 0.875rem;    /* 14px */
+  --font-luxury-base: 1rem;      /* 16px */
+  --font-luxury-lg: 1.125rem;    /* 18px */
+  --font-luxury-xl: 1.25rem;     /* 20px */
+  --font-luxury-2xl: 1.5rem;     /* 24px */
+  --font-luxury-3xl: 1.875rem;   /* 30px */
+  --font-luxury-4xl: 2.25rem;    /* 36px */
+  --font-luxury-5xl: 3rem;       /* 48px */
+  
+  /* Luxury line heights */
+  --leading-luxury-tight: 1.1;
+  --leading-luxury-snug: 1.25;
+  --leading-luxury-normal: 1.5;
+  --leading-luxury-relaxed: 1.75;
+  --leading-luxury-loose: 2;
+  
+  /* Luxury shadows for depth */
+  --shadow-luxury-sm: 0 1px 2px 0 rgba(44, 44, 44, 0.05);
+  --shadow-luxury-md: 0 4px 6px -1px rgba(44, 44, 44, 0.1), 0 2px 4px -1px rgba(44, 44, 44, 0.06);
+  --shadow-luxury-lg: 0 10px 15px -3px rgba(44, 44, 44, 0.1), 0 4px 6px -2px rgba(44, 44, 44, 0.05);
+  --shadow-luxury-xl: 0 20px 25px -5px rgba(44, 44, 44, 0.1), 0 10px 10px -5px rgba(44, 44, 44, 0.04);
+  
+  /* Luxury border radius scale */
+  --radius-luxury-sm: 0.125rem;  /* 2px */
+  --radius-luxury-md: 0.375rem;  /* 6px */
+  --radius-luxury-lg: 0.5rem;    /* 8px */
+  --radius-luxury-xl: 0.75rem;   /* 12px */
+  --radius-luxury-2xl: 1rem;     /* 16px */
+  --radius-luxury-3xl: 1.5rem;   /* 24px */
 }
 
 @theme inline {
+  /* Primary luxury colors */
   --color-charcoal: var(--charcoal);
   --color-verde: var(--verde);
   --color-gold: var(--gold);
   --color-ivory: var(--ivory);
   --color-warm-gray: var(--warm-gray);
-  --font-didot: "Didot", serif;
+  
+  /* Enhanced color variations */
+  --color-charcoal-light: var(--charcoal-light);
+  --color-charcoal-dark: var(--charcoal-dark);
+  --color-verde-light: var(--verde-light);
+  --color-verde-dark: var(--verde-dark);
+  --color-gold-light: var(--gold-light);
+  --color-gold-dark: var(--gold-dark);
+  --color-ivory-warm: var(--ivory-warm);
+  --color-ivory-cool: var(--ivory-cool);
+  --color-warm-gray-light: var(--warm-gray-light);
+  --color-warm-gray-dark: var(--warm-gray-dark);
+  
+  /* Luxury typography */
+  --font-luxury-serif: "Didot", "Times New Roman", serif;
+  --font-luxury-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  
+  /* Luxury spacing */
+  --space-luxury-xs: var(--space-luxury-xs);
+  --space-luxury-sm: var(--space-luxury-sm);
+  --space-luxury-md: var(--space-luxury-md);
+  --space-luxury-lg: var(--space-luxury-lg);
+  --space-luxury-xl: var(--space-luxury-xl);
+  --space-luxury-2xl: var(--space-luxury-2xl);
+  --space-luxury-3xl: var(--space-luxury-3xl);
+  --space-luxury-4xl: var(--space-luxury-4xl);
+  
+  /* Luxury font sizes */
+  --font-size-luxury-xs: var(--font-luxury-xs);
+  --font-size-luxury-sm: var(--font-luxury-sm);
+  --font-size-luxury-base: var(--font-luxury-base);
+  --font-size-luxury-lg: var(--font-luxury-lg);
+  --font-size-luxury-xl: var(--font-luxury-xl);
+  --font-size-luxury-2xl: var(--font-luxury-2xl);
+  --font-size-luxury-3xl: var(--font-luxury-3xl);
+  --font-size-luxury-4xl: var(--font-luxury-4xl);
+  --font-size-luxury-5xl: var(--font-luxury-5xl);
+  
+  /* Luxury shadows */
+  --box-shadow-luxury-sm: var(--shadow-luxury-sm);
+  --box-shadow-luxury-md: var(--shadow-luxury-md);
+  --box-shadow-luxury-lg: var(--shadow-luxury-lg);
+  --box-shadow-luxury-xl: var(--shadow-luxury-xl);
+  
+  /* Luxury border radius */
+  --border-radius-luxury-sm: var(--radius-luxury-sm);
+  --border-radius-luxury-md: var(--radius-luxury-md);
+  --border-radius-luxury-lg: var(--radius-luxury-lg);
+  --border-radius-luxury-xl: var(--radius-luxury-xl);
+  --border-radius-luxury-2xl: var(--radius-luxury-2xl);
+  --border-radius-luxury-3xl: var(--radius-luxury-3xl);
 }
 
 body {

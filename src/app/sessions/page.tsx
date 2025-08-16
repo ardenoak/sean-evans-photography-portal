@@ -4,7 +4,10 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 // Removed AdminAuth - direct access
 import { supabase } from '@/lib/supabase';
+import { authenticatedFetch, authenticatedPost } from '@/lib/auth-fetch';
 import Logo from '@/components/Logo';
+import TallyLayout from '@/components/TallyLayout';
+import { useFeatureFlag } from '@/hooks/useFeatureFlags';
 
 interface Session {
   id: string;
@@ -56,6 +59,10 @@ export default function AdminSessionsPage() {
     status: 'Confirmed & Scheduled'
   });
   const router = useRouter();
+  
+  // Feature flags
+  const enhancedSearchEnabled = useFeatureFlag('enhancedSearch');
+  const dashboardAnalyticsEnabled = useFeatureFlag('dashboardAnalytics');
 
   useEffect(() => {
     loadSessions();
@@ -64,15 +71,10 @@ export default function AdminSessionsPage() {
 
   const loadSessions = async () => {
     try {
-      const apiKey = process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c';
-      console.log('🔑 [SESSIONS] Using API Key:', apiKey ? 'Key present' : 'No key found');
+      console.log('🔑 [SESSIONS] Loading sessions with authenticated fetch');
       console.log('🌍 [SESSIONS] Environment:', process.env.NODE_ENV);
       
-      const response = await fetch('/api/sessions', {
-        headers: {
-          'X-API-Key': apiKey
-        }
-      });
+      const response = await authenticatedFetch('/api/sessions');
       const result = await response.json();
       console.log('📅 [SESSIONS] API result:', result);
       console.log('📡 [SESSIONS] Response status:', response.status, response.statusText);
@@ -96,15 +98,10 @@ export default function AdminSessionsPage() {
 
   const loadClients = async () => {
     try {
-      const apiKey = process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c';
-      console.log('🔑 [SESSIONS-CLIENTS] Using API Key:', apiKey ? 'Key present' : 'No key found');
+      console.log('🔑 [SESSIONS-CLIENTS] Loading clients with authenticated fetch');
       console.log('🌍 [SESSIONS-CLIENTS] Environment:', process.env.NODE_ENV);
       
-      const response = await fetch('/api/clients', {
-        headers: {
-          'X-API-Key': apiKey
-        }
-      });
+      const response = await authenticatedFetch('/api/clients');
       const result = await response.json();
       console.log('👥 [SESSIONS-CLIENTS] API result:', result);
       console.log('📡 [SESSIONS-CLIENTS] Response status:', response.status, response.statusText);
@@ -126,15 +123,13 @@ export default function AdminSessionsPage() {
 
   const updateSessionStatus = async (sessionId: string, newStatus: string) => {
     try {
-      const apiKey = process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c';
-      console.log('🔑 [SESSION-UPDATE] Using API Key:', apiKey ? 'Key present' : 'No key found');
+      console.log('🔑 [SESSION-UPDATE] Updating session with authenticated fetch');
       console.log('🌍 [SESSION-UPDATE] Environment:', process.env.NODE_ENV);
       
-      const response = await fetch('/api/sessions', {
+      const response = await authenticatedFetch('/api/sessions', {
         method: 'PUT',
         headers: { 
-          'Content-Type': 'application/json',
-          'X-API-Key': apiKey
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ id: sessionId, status: newStatus })
       });
@@ -213,19 +208,11 @@ export default function AdminSessionsPage() {
     setCreateLoading(true);
 
     try {
-      const apiKey = process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c';
-      console.log('🔑 [SESSION-CREATE] Using API Key:', apiKey ? 'Key present' : 'No key found');
+      console.log('🔑 [SESSION-CREATE] Creating session with authenticated fetch');
       console.log('🌍 [SESSION-CREATE] Environment:', process.env.NODE_ENV);
       console.log('📅 [SESSION-CREATE] Session data:', newSession);
       
-      const response = await fetch('/api/sessions', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-API-Key': apiKey
-        },
-        body: JSON.stringify(newSession)
-      });
+      const response = await authenticatedPost('/api/sessions', newSession);
 
       const result = await response.json();
       console.log('📝 [SESSION-CREATE] API result:', result);
@@ -295,229 +282,201 @@ export default function AdminSessionsPage() {
   // Direct admin access without auth
 
   return (
-    <div className="bg-ivory">
-      <div className="bg-gradient-to-b from-charcoal/5 to-transparent">
-        <div className="max-w-7xl mx-auto px-6 pt-8 pb-6">
-          <div className="text-center space-y-6">
-            <div className="space-y-3">
-              <h1 className="text-3xl md:text-4xl font-light text-charcoal tracking-wide">
-                Tally • Session Management
-              </h1>
-              <div className="w-16 h-px bg-charcoal/30 mx-auto"></div>
-            </div>
-            <p className="text-base font-light text-charcoal/70 max-w-2xl mx-auto leading-relaxed">
-              Schedule, track, and manage photography sessions with clients
-            </p>
-            {upcomingSessions > 0 && (
-              <div className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-full text-sm font-medium">
-                📅 {upcomingSessions} upcoming session{upcomingSessions !== 1 ? 's' : ''}
+    <TallyLayout>
+      <div className="bg-ivory">
+        {/* Compact Header */}
+        <div className="border-b border-charcoal/10 bg-white">
+          <div className="max-w-7xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-semibold text-charcoal">Sessions</h1>
+                <p className="text-sm text-charcoal/70 mt-1">Photography session scheduling and management</p>
               </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        {/* Session Stats */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-light text-charcoal tracking-wide mb-8">Session Overview</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="border border-charcoal/20 bg-white hover:shadow-lg transition-shadow duration-300">
-              <div className="p-8 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-3xl font-light text-charcoal mb-2">{sessions.length}</div>
-                    <div className="text-sm font-light tracking-wider uppercase text-charcoal/60">Total Sessions</div>
-                  </div>
-                  <div className="w-12 h-12 bg-charcoal/10 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-charcoal/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
+              {upcomingSessions > 0 && (
+                <div className="bg-blue-50 border border-blue-200 text-blue-700 px-3 py-2 rounded text-sm font-medium">
+                  {upcomingSessions} upcoming session{upcomingSessions !== 1 ? 's' : ''}
                 </div>
-              </div>
-            </div>
-
-            <div className="border border-charcoal/20 bg-white hover:shadow-lg transition-shadow duration-300">
-              <div className="p-8 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-3xl font-light text-charcoal mb-2">{statusCounts['Confirmed & Scheduled'] || 0}</div>
-                    <div className="text-sm font-light tracking-wider uppercase text-charcoal/60">Confirmed</div>
-                  </div>
-                  <div className="w-12 h-12 bg-verde/10 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-verde" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="border border-charcoal/20 bg-white hover:shadow-lg transition-shadow duration-300">
-              <div className="p-8 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-3xl font-light text-charcoal mb-2">{statusCounts.Completed || 0}</div>
-                    <div className="text-sm font-light tracking-wider uppercase text-charcoal/60">Completed</div>
-                  </div>
-                  <div className="w-12 h-12 bg-gold/10 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="border border-charcoal/20 bg-white hover:shadow-lg transition-shadow duration-300">
-              <div className="p-8 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-3xl font-light text-charcoal mb-2">{upcomingSessions}</div>
-                    <div className="text-sm font-light tracking-wider uppercase text-charcoal/60">Upcoming</div>
-                  </div>
-                  <div className="w-12 h-12 bg-blue-500/10 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Session Management Tools */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-light text-charcoal tracking-wide">Active Sessions</h2>
+        <div className="max-w-7xl mx-auto px-6 py-4">
+
+        {/* Compact Session Management */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <div></div>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="bg-charcoal text-white px-6 py-3 text-sm font-light tracking-wide uppercase hover:bg-charcoal/90 transition-colors"
+              className="bg-verde text-white px-4 py-2 text-sm font-medium hover:bg-verde/90 transition-colors rounded"
             >
-              + Schedule Session
+              + New Session
             </button>
           </div>
           
-          <div className="border border-charcoal/20 bg-white p-6 mb-6">
-            <div className="flex flex-col lg:flex-row gap-4">
+          {/* Compact Filters */}
+          <div className="border border-charcoal/20 bg-white p-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-4 py-3 border border-charcoal/20 text-sm font-light focus:ring-2 focus:ring-charcoal/20 focus:border-charcoal"
+                className="px-3 py-2 border border-charcoal/20 text-sm focus:ring-1 focus:ring-verde focus:border-verde rounded"
               >
-                <option value="all">All Sessions</option>
-                <option value="Confirmed & Scheduled">Confirmed Sessions</option>
-                <option value="Completed">Completed Sessions</option>
-                <option value="Pending">Pending Sessions</option>
-                <option value="Cancelled">Cancelled Sessions</option>
+                <option value="all">All Status</option>
+                <option value="Confirmed & Scheduled">✓ Confirmed</option>
+                <option value="Completed">★ Completed</option>
+                <option value="Pending">⏳ Pending</option>
+                <option value="Cancelled">⚠ Cancelled</option>
               </select>
               
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by client name, session type, or title..."
-                className="flex-1 px-4 py-3 border border-charcoal/20 text-sm font-light focus:ring-2 focus:ring-charcoal/20 focus:border-charcoal"
+                placeholder="Search sessions..."
+                className="flex-1 px-3 py-2 border border-charcoal/20 text-sm focus:ring-1 focus:ring-verde focus:border-verde rounded"
               />
+              
+              <div className="text-sm text-charcoal/60 flex items-center px-2">
+                {filteredSessions.length} of {sessions.length} sessions
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Sessions List */}
+        {/* Sessions Table - Dense List Format */}
         <div className="border border-charcoal/20 bg-white">
           {filteredSessions.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="w-16 h-16 bg-charcoal/5 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <svg className="w-8 h-8 text-charcoal/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+            <div className="text-center py-12">
+              <div className="w-12 h-12 bg-charcoal/5 rounded-full mx-auto mb-3 flex items-center justify-center">
+                <svg className="w-6 h-6 text-charcoal/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
-              <p className="text-charcoal/60 font-light">No sessions found</p>
-              <p className="text-charcoal/40 text-sm mt-2">Try adjusting your search criteria</p>
+              <p className="text-charcoal/60 font-light text-sm">No sessions found</p>
+              <p className="text-charcoal/40 text-xs mt-1">Try adjusting your search criteria</p>
             </div>
           ) : (
-            <div className="divide-y divide-charcoal/10">
-              {filteredSessions.map((session) => (
-                <div
-                  key={session.id}
-                  className={`p-6 hover:bg-ivory/30 cursor-pointer transition-all duration-200 ${
-                    isUpcoming(session.session_date) ? 'bg-blue-50/50 border-l-4 border-l-blue-500' : ''
-                  }`}
-                  onClick={() => setSelectedSession(session)}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h3 className="text-lg font-light text-charcoal truncate">
-                          {session.session_title}
-                        </h3>
-                        {isUpcoming(session.session_date) && (
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-500 text-white">
-                            UPCOMING
-                          </span>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center space-x-4 text-sm text-charcoal/70 mb-3">
-                        <span className="font-medium">
-                          {session.clients.first_name} {session.clients.last_name}
-                        </span>
-                        <span>•</span>
-                        <span>{session.session_type}</span>
-                        {session.duration && (
-                          <>
-                            <span>•</span>
-                            <span>{session.duration}</span>
-                          </>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center space-x-4 text-sm">
-                        <span className="inline-flex items-center px-3 py-1 bg-charcoal/5 text-charcoal rounded">
-                          📅 {session.session_date}
-                        </span>
-                        {session.session_time && (
-                          <span className="inline-flex items-center px-3 py-1 bg-gold/10 text-charcoal rounded">
-                            🕐 {session.session_time}
-                          </span>
-                        )}
-                        {session.investment && (
-                          <span className="inline-flex items-center px-3 py-1 bg-verde/10 text-charcoal rounded">
-                            💰 {session.investment}
-                          </span>
-                        )}
-                      </div>
-                      
-                      {session.location && (
-                        <div className="mt-3">
-                          <p className="text-sm text-charcoal/60">
-                            📍 {session.location}
-                          </p>
+            <>
+              {/* Table Header - Desktop Only */}
+              <div className="hidden md:block border-b border-charcoal/10 bg-charcoal/5">
+                <div className="grid grid-cols-12 gap-4 px-4 py-3 text-xs font-medium text-charcoal/70 uppercase tracking-wide">
+                  <div className="col-span-3">Date & Client</div>
+                  <div className="col-span-2">Session Type</div>
+                  <div className="col-span-2">Time & Duration</div>
+                  <div className="col-span-2">Location</div>
+                  <div className="col-span-2">Investment</div>
+                  <div className="col-span-1">Status</div>
+                </div>
+              </div>
+
+              {/* Sessions Rows */}
+              <div className="divide-y divide-charcoal/5">
+                {filteredSessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className={`relative hover:bg-ivory/50 cursor-pointer transition-all duration-200 ${
+                      isUpcoming(session.session_date) ? 'bg-blue-50/30 border-l-2 border-l-blue-500' : ''
+                    }`}
+                    onClick={() => setSelectedSession(session)}
+                  >
+                    {/* Desktop Table Layout */}
+                    <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-3 items-center text-sm">
+                      {/* Date & Client */}
+                      <div className="col-span-3">
+                        <div className="space-y-1">
+                          <div className="font-medium text-charcoal flex items-center space-x-2">
+                            <span>{session.session_date}</span>
+                            {isUpcoming(session.session_date) && (
+                              <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                            )}
+                          </div>
+                          <div className="text-charcoal/70 text-xs">
+                            {session.clients.first_name} {session.clients.last_name}
+                          </div>
                         </div>
-                      )}
+                      </div>
+
+                      {/* Session Type */}
+                      <div className="col-span-2">
+                        <div className="space-y-1">
+                          <div className="font-medium text-charcoal truncate">{session.session_type}</div>
+                          <div className="text-charcoal/60 text-xs truncate">{session.session_title}</div>
+                        </div>
+                      </div>
+
+                      {/* Time & Duration */}
+                      <div className="col-span-2">
+                        <div className="space-y-1">
+                          <div className="text-charcoal">{session.session_time || 'All Day'}</div>
+                          <div className="text-charcoal/60 text-xs">{session.duration}</div>
+                        </div>
+                      </div>
+
+                      {/* Location */}
+                      <div className="col-span-2">
+                        <div className="text-charcoal/70 text-xs truncate">
+                          {session.location || 'Location TBD'}
+                        </div>
+                      </div>
+
+                      {/* Investment */}
+                      <div className="col-span-2">
+                        <div className="font-medium text-verde">
+                          {session.investment || 'Quote Pending'}
+                        </div>
+                      </div>
+
+                      {/* Status */}
+                      <div className="col-span-1">
+                        <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
+                          session.status === 'Confirmed & Scheduled' ? 'bg-verde text-white' :
+                          session.status === 'Completed' ? 'bg-gold text-white' :
+                          session.status === 'Pending' ? 'bg-orange-500 text-white' :
+                          'bg-red-500 text-white'
+                        }`}>
+                          {session.status === 'Confirmed & Scheduled' ? '✓' : 
+                           session.status === 'Completed' ? '★' :
+                           session.status === 'Pending' ? '⏳' : '⚠'}
+                        </span>
+                      </div>
                     </div>
-                    
-                    <div className="flex flex-col items-end space-y-2 ml-6">
-                      <span className={`px-3 py-1 text-xs font-light tracking-wide uppercase rounded ${
-                        session.status === 'Confirmed & Scheduled' ? 'bg-verde/20 text-verde' :
-                        session.status === 'Completed' ? 'bg-gold/20 text-gold' :
-                        session.status === 'Pending' ? 'bg-orange-100 text-orange-700' :
-                        'bg-red-100 text-red-700'
-                      }`}>
-                        {session.status === 'Confirmed & Scheduled' ? 'Confirmed' : session.status}
-                      </span>
-                      <span className="text-xs text-charcoal/50">
-                        {formatDate(session.session_date)}
-                      </span>
+
+                    {/* Mobile Card Layout */}
+                    <div className="md:hidden p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium text-charcoal text-sm">{session.session_date}</span>
+                          {isUpcoming(session.session_date) && (
+                            <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                          )}
+                          <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ${
+                            session.status === 'Confirmed & Scheduled' ? 'bg-verde text-white' :
+                            session.status === 'Completed' ? 'bg-gold text-white' :
+                            session.status === 'Pending' ? 'bg-orange-500 text-white' :
+                            'bg-red-500 text-white'
+                          }`}>
+                            {session.status === 'Confirmed & Scheduled' ? '✓' : 
+                             session.status === 'Completed' ? '★' :
+                             session.status === 'Pending' ? '⏳' : '⚠'}
+                          </span>
+                        </div>
+                        <div className="text-verde font-medium text-sm">{session.investment || 'Quote'}</div>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <div className="text-charcoal font-medium">{session.clients.first_name} {session.clients.last_name}</div>
+                        <div className="text-charcoal/70 text-sm">{session.session_type} • {session.session_time || 'All Day'}</div>
+                        {session.location && (
+                          <div className="text-charcoal/60 text-xs">{session.location}</div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -840,6 +799,7 @@ export default function AdminSessionsPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </TallyLayout>
   );
 }
