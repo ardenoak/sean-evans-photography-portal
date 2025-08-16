@@ -35,10 +35,13 @@ export default function AdminClientsPage() {
   const loadClients = async () => {
     try {
       console.log('Loading all clients...');
+      const apiKey = process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c';
+      console.log('Using API Key:', apiKey ? 'Key present' : 'No key found');
+      console.log('Environment:', process.env.NODE_ENV);
       
       const response = await fetch('/api/clients', {
         headers: {
-          'X-API-Key': process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c'
+          'X-API-Key': apiKey
         }
       });
       const result = await response.json();
