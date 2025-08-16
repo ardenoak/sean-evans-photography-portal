@@ -743,36 +743,63 @@ export default function PackagesPage() {
   };
 
   const previewExperience = () => {
-    // Validate required fields
-    if (!experienceTitle.trim()) {
-      alert('Please enter an experience title.');
-      return;
-    }
-    
-    if (selectedPackages.length === 0) {
-      alert('Please select at least one package. A package is required to preview an experience.');
-      return;
-    }
+    try {
+      console.log('🔍 [EXPERIENCE-PREVIEW] Starting experience preview creation...');
+      console.log('🌍 [EXPERIENCE-PREVIEW] Environment:', process.env.NODE_ENV);
+      
+      // Validate required fields
+      if (!experienceTitle.trim()) {
+        console.error('❌ [EXPERIENCE-PREVIEW] Validation failed: Missing experience title');
+        alert('Please enter an experience title.');
+        return;
+      }
+      
+      if (selectedPackages.length === 0) {
+        console.error('❌ [EXPERIENCE-PREVIEW] Validation failed: No packages selected');
+        alert('Please select at least one package. A package is required to preview an experience.');
+        return;
+      }
 
-    // Create a mock experience preview
-    const experienceData = {
-      title: experienceTitle,
-      packages: selectedPackages,
-      enhancements: selectedEnhancements.map(item => ({...item.package, is_required: item.required})),
-      motion: selectedMotion.map(item => ({...item.package, is_required: item.required})),
-      discount: experienceDiscount,
-      subtotal: calculateExperienceTotal(selectedPackages, selectedEnhancements, selectedMotion),
-      total: calculateDiscountedPrice(
-        calculateExperienceTotal(selectedPackages, selectedEnhancements, selectedMotion), 
-        experienceDiscount
-      )
-    };
+      console.log('📦 [EXPERIENCE-PREVIEW] Selected packages:', selectedPackages.length, selectedPackages.map(p => p.title));
+      console.log('✨ [EXPERIENCE-PREVIEW] Selected enhancements:', selectedEnhancements.length, selectedEnhancements.map(e => `${e.package.title} (${e.required ? 'required' : 'optional'})`));
+      console.log('🎥 [EXPERIENCE-PREVIEW] Selected motion:', selectedMotion.length, selectedMotion.map(m => `${m.package.title} (${m.required ? 'required' : 'optional'})`));
+      
+      // Create a mock experience preview
+      const experienceData = {
+        title: experienceTitle,
+        packages: selectedPackages,
+        enhancements: selectedEnhancements.map(item => ({...item.package, is_required: item.required})),
+        motion: selectedMotion.map(item => ({...item.package, is_required: item.required})),
+        discount: experienceDiscount,
+        subtotal: calculateExperienceTotal(selectedPackages, selectedEnhancements, selectedMotion),
+        total: calculateDiscountedPrice(
+          calculateExperienceTotal(selectedPackages, selectedEnhancements, selectedMotion), 
+          experienceDiscount
+        )
+      };
 
-    // Store in sessionStorage for preview page
-    sessionStorage.setItem('experiencePreview', JSON.stringify(experienceData));
-    
-    // Open preview in new tab
-    window.open('/tally/experience-preview', '_blank');
+      console.log('📊 [EXPERIENCE-PREVIEW] Experience data created:', {
+        title: experienceData.title,
+        packagesCount: experienceData.packages.length,
+        enhancementsCount: experienceData.enhancements.length,
+        motionCount: experienceData.motion.length,
+        subtotal: experienceData.subtotal,
+        total: experienceData.total
+      });
+
+      // Store in sessionStorage for preview page
+      sessionStorage.setItem('experiencePreview', JSON.stringify(experienceData));
+      console.log('✅ [EXPERIENCE-PREVIEW] Data stored in sessionStorage successfully');
+      
+      // Fixed route: Open preview in new tab
+      const previewUrl = '/experience-preview';
+      console.log('🔗 [EXPERIENCE-PREVIEW] Opening preview URL:', previewUrl);
+      window.open(previewUrl, '_blank');
+      
+    } catch (error) {
+      console.error('❌ [EXPERIENCE-PREVIEW] Error creating experience preview:', error);
+      alert('Error creating experience preview. Please try again.');
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -1157,6 +1184,13 @@ export default function PackagesPage() {
                               motion = (packageSnapshots as any).motion || [];
                             }
                             
+                            console.log('🔍 [EXISTING-EXPERIENCE-PREVIEW] Starting existing experience preview...');
+                            console.log('🌍 [EXISTING-EXPERIENCE-PREVIEW] Environment:', process.env.NODE_ENV);
+                            console.log('📋 [EXISTING-EXPERIENCE-PREVIEW] Experience:', experience.title, experience.id);
+                            console.log('📦 [EXISTING-EXPERIENCE-PREVIEW] Parsed packages:', packages.length, packages.map((p: any) => p.title));
+                            console.log('✨ [EXISTING-EXPERIENCE-PREVIEW] Parsed enhancements:', enhancements.length, enhancements.map((e: any) => e.title));
+                            console.log('🎥 [EXISTING-EXPERIENCE-PREVIEW] Parsed motion:', motion.length, motion.map((m: any) => m.title));
+                            
                             const experiencePreviewData = {
                               title: experience.title,
                               packages: packages,
@@ -1170,8 +1204,23 @@ export default function PackagesPage() {
                               subtotal: experience.subtotal,
                               total: experience.total_amount
                             };
+                            
+                            console.log('📊 [EXISTING-EXPERIENCE-PREVIEW] Final preview data:', {
+                              title: experiencePreviewData.title,
+                              packagesCount: experiencePreviewData.packages.length,
+                              enhancementsCount: experiencePreviewData.enhancements.length,
+                              motionCount: experiencePreviewData.motion.length,
+                              subtotal: experiencePreviewData.subtotal,
+                              total: experiencePreviewData.total
+                            });
+                            
                             sessionStorage.setItem('experiencePreview', JSON.stringify(experiencePreviewData));
-                            window.open('/tally/experience-preview', '_blank');
+                            console.log('✅ [EXISTING-EXPERIENCE-PREVIEW] Data stored in sessionStorage successfully');
+                            
+                            // Fixed route: Open preview in new tab
+                            const previewUrl = '/experience-preview';
+                            console.log('🔗 [EXISTING-EXPERIENCE-PREVIEW] Opening preview URL:', previewUrl);
+                            window.open(previewUrl, '_blank');
                           }}
                           className="flex-1 py-2 px-4 border border-charcoal/30 text-charcoal text-sm font-light tracking-wide uppercase hover:bg-charcoal hover:text-white transition-all duration-300"
                         >
