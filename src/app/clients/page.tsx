@@ -47,9 +47,15 @@ export default function AdminClientsPage() {
       const result = await response.json();
 
       console.log('Clients API result:', result);
+      console.log('Response status:', response.status, response.statusText);
 
       if (!response.ok) {
         console.error('Error loading clients:', result.error);
+        // Still try to set clients data if it exists in the result
+        if (result.data) {
+          console.log('Setting clients data despite error status');
+          setClients(result.data);
+        }
       } else {
         setClients(result.data || []);
       }
