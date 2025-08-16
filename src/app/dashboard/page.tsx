@@ -68,19 +68,31 @@ export default function AdminDashboardPage() {
       const startTime = Date.now();
       
       // Use the new consolidated API endpoint
+      const apiKey = process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c';
+      console.log('🔑 [DASHBOARD] Using API Key:', apiKey ? 'Key present' : 'No key found');
+      console.log('🌍 [DASHBOARD] Environment:', process.env.NODE_ENV);
+      
       const response = await fetch('/api/dashboard/stats', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c'
+          'X-API-Key': apiKey
         }
       });
 
-      if (!response.ok) {
-        throw new Error(`Dashboard API responded with ${response.status}`);
-      }
-
       const result = await response.json();
+      console.log('📊 [DASHBOARD] API result:', result);
+      console.log('📡 [DASHBOARD] Response status:', response.status, response.statusText);
+
+      if (!response.ok) {
+        console.error('❌ [DASHBOARD] Error response:', result.error);
+        // Still try to use data if it exists in the result
+        if (result.data) {
+          console.log('✅ [DASHBOARD] Setting dashboard data despite error status');
+        } else {
+          throw new Error(`Dashboard API responded with ${response.status}: ${result.error || response.statusText}`);
+        }
+      }
       const endTime = Date.now();
       const duration = endTime - startTime;
       

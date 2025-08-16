@@ -127,15 +127,26 @@ export default function AdminLeadsPage() {
 
   const loadLeads = async () => {
     try {
+      const apiKey = process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c';
+      console.log('🔑 [LEADS] Using API Key:', apiKey ? 'Key present' : 'No key found');
+      console.log('🌍 [LEADS] Environment:', process.env.NODE_ENV);
+      
       const response = await fetch('/api/leads', {
         headers: {
-          'X-API-Key': process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c'
+          'X-API-Key': apiKey
         }
       });
       const result = await response.json();
+      console.log('📋 [LEADS] API result:', result);
+      console.log('📡 [LEADS] Response status:', response.status, response.statusText);
 
       if (!response.ok) {
-        console.error('Error loading leads:', result.error);
+        console.error('❌ [LEADS] Error response:', result.error);
+        // Still try to set leads data if it exists in the result
+        if (result.data) {
+          console.log('✅ [LEADS] Setting leads data despite error status');
+          setLeads(result.data);
+        }
       } else {
         setLeads(result.data || []);
       }
@@ -173,9 +184,16 @@ export default function AdminLeadsPage() {
         }
       });
       const result = await response.json();
+      console.log('📄 [PROPOSALS] API result:', result);
+      console.log('📡 [PROPOSALS] Response status:', response.status, response.statusText);
       
       if (!response.ok) {
-        console.error('Error loading proposals:', result.error);
+        console.error('❌ [PROPOSALS] Error response:', result.error);
+        // Still try to set proposals data if it exists in the result
+        if (result.data) {
+          console.log('✅ [PROPOSALS] Setting proposals data despite error status');
+          setLeadProposals(result.data);
+        }
       } else {
         setLeadProposals(result.data || []);
       }
@@ -189,12 +207,22 @@ export default function AdminLeadsPage() {
           }
         });
         const quotesResult = await quotesResponse.json();
+        console.log('💰 [QUOTES] API result:', quotesResult);
+        console.log('📡 [QUOTES] Response status:', quotesResponse.status, quotesResponse.statusText);
         
         if (quotesResponse.ok && quotesResult.data) {
           quotes = Array.isArray(quotesResult.data) ? quotesResult.data : [quotesResult.data];
           setLeadQuotes(quotes);
         } else {
-          setLeadQuotes([]);
+          console.error('❌ [QUOTES] Error response:', quotesResult.error);
+          // Still try to set quotes data if it exists in the result
+          if (quotesResult.data) {
+            console.log('✅ [QUOTES] Setting quotes data despite error status');
+            quotes = Array.isArray(quotesResult.data) ? quotesResult.data : [quotesResult.data];
+            setLeadQuotes(quotes);
+          } else {
+            setLeadQuotes([]);
+          }
         }
       } catch (error) {
         console.error('Error loading quotes:', error);
