@@ -14,11 +14,16 @@
  * @returns Promise<Response>
  */
 export const authenticatedFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
-  // Add credentials to include session cookies for server-side authentication
+  // Get API key from environment for production authentication
+  const apiKey = process.env.NEXT_PUBLIC_ADMIN_API_KEY;
+  
+  // Add credentials and API key for server-side authentication
   const defaultOptions: RequestInit = {
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      // Add API key header for production middleware authentication
+      ...(apiKey && { 'X-API-Key': apiKey }),
       ...options.headers
     },
     ...options
