@@ -167,7 +167,11 @@ export default function AdminLeadsPage() {
     setProposalsLoading(true);
     try {
       // Load proposals
-      const response = await fetch(`/api/proposals?leadId=${leadId}`);
+      const response = await fetch(`/api/proposals?leadId=${leadId}`, {
+        headers: {
+          'X-API-Key': process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c'
+        }
+      });
       const result = await response.json();
       
       if (!response.ok) {
@@ -179,7 +183,11 @@ export default function AdminLeadsPage() {
       // Load quotes for this lead
       let quotes = [];
       try {
-        const quotesResponse = await fetch(`/api/quotes?lead_id=${leadId}`);
+        const quotesResponse = await fetch(`/api/quotes?lead_id=${leadId}`, {
+          headers: {
+            'X-API-Key': process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c'
+          }
+        });
         const quotesResult = await quotesResponse.json();
         
         if (quotesResponse.ok && quotesResult.data) {
@@ -197,7 +205,11 @@ export default function AdminLeadsPage() {
       try {
         if (quotes.length > 0) {
           const contractPromises = quotes.map((quote: any) => 
-            fetch(`/api/contracts?quote_id=${quote.id}`)
+            fetch(`/api/contracts?quote_id=${quote.id}`, {
+              headers: {
+                'X-API-Key': process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c'
+              }
+            })
               .then(res => res.json())
               .then(result => result.data)
               .catch(() => null)
@@ -263,7 +275,11 @@ The lead status has been updated to "converted" and you can now access the clien
   const loadStandardExperiences = async () => {
     setStandardExLoading(true);
     try {
-      const response = await fetch('/api/proposals');
+      const response = await fetch('/api/proposals', {
+        headers: {
+          'X-API-Key': process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c'
+        }
+      });
       const result = await response.json();
       
       if (!response.ok) {

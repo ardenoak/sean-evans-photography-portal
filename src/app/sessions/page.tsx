@@ -85,7 +85,11 @@ export default function AdminSessionsPage() {
 
   const loadClients = async () => {
     try {
-      const response = await fetch('/api/clients');
+      const response = await fetch('/api/clients', {
+        headers: {
+          'X-API-Key': process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c'
+        }
+      });
       const result = await response.json();
 
       if (!response.ok) {

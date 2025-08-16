@@ -393,7 +393,8 @@ export default function PackagesPage() {
       const response = await fetch('/api/packages', {
         method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-API-Key': process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c'
         },
         body: JSON.stringify({ id: pkg.id })
       });
@@ -460,7 +461,8 @@ export default function PackagesPage() {
       const response = await fetch(url, {
         method,
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-API-Key': process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c'
         },
         body: JSON.stringify(requestBody)
       });
@@ -515,7 +517,11 @@ export default function PackagesPage() {
       let leadData = null;
       if (isForLead) {
         // Fetch lead data to personalize the experience
-        const response = await fetch(`/api/leads/${leadId}`);
+        const response = await fetch(`/api/leads/${leadId}`, {
+          headers: {
+            'X-API-Key': process.env.NEXT_PUBLIC_ADMIN_API_KEY || '66c35a78cd1f6ef98da9c880b99cf77304de9cc9fe2d2101ea93a10fc550232c'
+          }
+        });
         const result = await response.json();
         if (response.ok && result.data) {
           leadData = result.data;
