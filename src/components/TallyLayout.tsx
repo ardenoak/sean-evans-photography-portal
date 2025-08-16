@@ -364,22 +364,33 @@ export default function TallyLayout({
   );
 
   return (
-    <div className="min-h-screen bg-ivory flex flex-col">
+    <div className="min-h-screen bg-ivory">
       {useEnhancedNavigation ? (
-        <>
+        <div className="flex flex-col min-h-screen">
           {/* Enhanced Desktop Navigation */}
           <EnhancedDesktopNav />
           
           {/* Enhanced Mobile Navigation */}
           <EnhancedMobileNav />
-        </>
+          
+          {/* Enhanced Navigation Content Area */}
+          <div className="flex-1 flex flex-col min-w-0">
+            {/* Page content with optimized spacing for mobile bottom nav */}
+            <main className="flex-1 overflow-hidden pb-[88px] lg:pb-0">
+              <div className="h-full lg:pt-0">
+                {children}
+              </div>
+            </main>
+          </div>
+        </div>
       ) : (
-        /* Legacy Sidebar Navigation */
-        <div className={`bg-charcoal transition-all duration-300 ease-in-out ${
-          sidebarExpanded ? 'w-64' : 'w-16'
-        } lg:relative fixed inset-y-0 left-0 z-50 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        }`}>
+        <div className="flex min-h-screen">
+          {/* Legacy Sidebar Navigation */}
+          <div className={`bg-charcoal transition-all duration-300 ease-in-out ${
+            sidebarExpanded ? 'w-64' : 'w-16'
+          } fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto ${
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          }`}>
           <div className="flex flex-col h-full">
             {/* Sidebar Header */}
             <div className="flex items-center justify-between h-16 px-4 border-b border-white/10">
@@ -448,6 +459,31 @@ export default function TallyLayout({
                 </div>
               )}
             </div>
+          </div>
+          </div>
+          
+          {/* Main content area for legacy sidebar */}
+          <div className="flex-1 flex flex-col min-w-0">
+            {/* Legacy Mobile header (only shown when not using enhanced navigation) */}
+            <div className="lg:hidden bg-white shadow-sm border-b border-warm-gray/20">
+              <div className="flex items-center justify-between px-4 py-3">
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="p-2 text-warm-gray hover:text-charcoal transition-colors"
+                >
+                  <span className="text-lg">☰</span>
+                </button>
+                <Logo width={100} height={33} variant="light" className="opacity-90" />
+                <div className="w-8"></div> {/* Spacer for center alignment */}
+              </div>
+            </div>
+
+            {/* Page content with optimized spacing for mobile bottom nav */}
+            <main className="flex-1 overflow-hidden">
+              <div className="h-full">
+                {children}
+              </div>
+            </main>
           </div>
         </div>
       )}
@@ -542,35 +578,6 @@ export default function TallyLayout({
           </div>
         </>
       )}
-
-      {/* Main content area */}
-      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out ${
-        useEnhancedNavigation ? '' : sidebarExpanded ? 'lg:ml-64' : 'lg:ml-16'
-      }`}>
-        {/* Legacy Mobile header (only shown when not using enhanced navigation) */}
-        {!useEnhancedNavigation && (
-          <div className="lg:hidden bg-white shadow-sm border-b border-warm-gray/20">
-            <div className="flex items-center justify-between px-4 py-3">
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="p-2 text-warm-gray hover:text-charcoal transition-colors"
-              >
-                <span className="text-lg">☰</span>
-              </button>
-              <Logo width={100} height={33} variant="light" className="opacity-90" />
-              <div className="w-8"></div> {/* Spacer for center alignment */}
-            </div>
-          </div>
-        )}
-
-        {/* Page content with optimized spacing for mobile bottom nav */}
-        <main className={`flex-1 overflow-hidden ${
-          useEnhancedNavigation ? 'pb-[88px] lg:pb-0' : ''
-        }`}>
-          <div className={`h-full ${useEnhancedNavigation ? 'lg:pt-0' : ''}`}>
-            {children}
-          </div>
-        </main>
         
         {/* Debug Mode Indicator - Disabled for clean UI */}
         {false && debugModeEnabled && (
@@ -578,20 +585,19 @@ export default function TallyLayout({
             🐛 Debug Mode Active
           </div>
         )}
-      </div>
-      
-      {/* Feature Flag Status Overlay - Disabled for clean UI */}
-      {false && debugModeEnabled && (
-        <div className="fixed top-4 right-4 bg-black/80 text-white p-4 rounded-lg text-xs z-50 max-w-xs">
-          <h4 className="font-medium mb-2">🚀 Feature Flags Status</h4>
-          <div className="space-y-1">
-            <div>Enhanced Navigation: {useEnhancedNavigation ? '✅' : '❌'}</div>
-            <div>Enhanced Search: {enhancedSearchEnabled ? '✅' : '❌'}</div>
-            <div>Dashboard Analytics: {dashboardAnalyticsEnabled ? '✅' : '❌'}</div>
-            <div>Debug Mode: {debugModeEnabled ? '✅' : '❌'}</div>
+        
+        {/* Feature Flag Status Overlay - Disabled for clean UI */}
+        {false && debugModeEnabled && (
+          <div className="fixed top-4 right-4 bg-black/80 text-white p-4 rounded-lg text-xs z-50 max-w-xs">
+            <h4 className="font-medium mb-2">🚀 Feature Flags Status</h4>
+            <div className="space-y-1">
+              <div>Enhanced Navigation: {useEnhancedNavigation ? '✅' : '❌'}</div>
+              <div>Enhanced Search: {enhancedSearchEnabled ? '✅' : '❌'}</div>
+              <div>Dashboard Analytics: {dashboardAnalyticsEnabled ? '✅' : '❌'}</div>
+              <div>Debug Mode: {debugModeEnabled ? '✅' : '❌'}</div>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
   );
 }
